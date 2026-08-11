@@ -44,7 +44,9 @@ import org.json.JSONObject;
 public class GetData extends HttpServlet {
 
     /**
-     * ************************ Create Json File *****************************
+     * ************************ Create Json File
+     *
+     *****************************
      * @param outgoingLinks
      * @param subjectLabel
      * @param subjectType
@@ -100,9 +102,11 @@ public class GetData extends HttpServlet {
         result.put("Subject", subjectlist);
         return result;
     }
-    
+
     /**
-     * ************************ Create Inverse properties Json File *****************************
+     * ************************ Create Inverse properties Json File
+     *
+     *****************************
      * @param outgoingLinks
      * @param subjectLabel
      * @param subjectType
@@ -112,7 +116,6 @@ public class GetData extends HttpServlet {
      * @throws org.openrdf.query.MalformedQueryException
      * @throws org.openrdf.query.QueryEvaluationException
      */
-
     public static JSONObject createInvertJsonFile(Map<Triple, List<Triple>> outgoingLinks, String subjectLabel, String subjectType, String subject)
             throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
@@ -163,7 +166,9 @@ public class GetData extends HttpServlet {
     }
 
     /**
-     * ************************ Merge two Json objects into one *****************************
+     * ************************ Merge two Json objects into one
+     *
+     *****************************
      * @param o1
      * @param o2
      * @param subjectLabel
@@ -172,9 +177,8 @@ public class GetData extends HttpServlet {
      * @return
      * @throws org.openrdf.repository.RepositoryException
      * @throws org.openrdf.query.MalformedQueryException
-     * @throws org.openrdf.query.QueryEvaluationException 
+     * @throws org.openrdf.query.QueryEvaluationException
      */
-    
     public static JSONObject mergeJson(JSONObject o1, JSONObject o2, String subjectLabel, String subjectType, String subject)
             throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
@@ -213,31 +217,31 @@ public class GetData extends HttpServlet {
         return result;
 
     }
-       
+
     /**
-     * ************************** Virtuoso Case ******************************
+     * ************************** Virtuoso Case
+     *
+     ******************************
      * @param resource
      * @return
      * @throws org.openrdf.repository.RepositoryException
      * @throws org.openrdf.query.MalformedQueryException
      * @throws org.openrdf.query.QueryEvaluationException
      */
-    public static JSONObject virtuosocase(String resource, String label,String pref_labels,String show_incomingLinks) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
+    public static JSONObject virtuosocase(String resource, String label, String pref_labels, String show_incomingLinks) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
         GetConfigProperties app = new GetConfigProperties();
         Properties props = app.getConfig("config.properties");
-        
+
         String db_url = props.getProperty("db_url").trim();
         String db_port = props.getProperty("db_port").trim();
         String db_username = props.getProperty("db_username").trim();
         String db_password = props.getProperty("db_password").trim();
         String db_graphname = props.getProperty("db_graphname").trim();
-        
+
         //String label = props.getProperty("schema_label").trim();
         //String pref_labels = props.getProperty("pref_labels").trim();
-        
-       
-        String exclude_inverse = props.getProperty("exclude_inverse").trim();        
+        String exclude_inverse = props.getProperty("exclude_inverse").trim();
         List<String> exclusions = Arrays.asList(exclude_inverse.split("\\s*,\\s*"));
 
         String subject = resource;
@@ -250,10 +254,10 @@ public class GetData extends HttpServlet {
         if (subject.length() > 2000) {
             subject = subject.substring(0, 500);
         }
-       
+
         String subjectLabel = manager.returnLabel(subject, label);
         String subjectType = manager.returnType(subject);
-                       
+
         String[] pref_lbls = pref_labels.split(",");
 
         if ((subjectLabel.isEmpty()) && (pref_lbls.length > 0)) {
@@ -266,35 +270,33 @@ public class GetData extends HttpServlet {
 
         labels.add(label);
         if (pref_lbls[0].length() > 0) {
-            for (int i = 0; i < pref_lbls.length; i++) {                
+            for (int i = 0; i < pref_lbls.length; i++) {
                 labels.add(pref_lbls[i]);
             }
         }
-        
-        outgoingLinks = manager.returnOutgoingLinksWithTypes(subject, labels, db_graphname);  
+
+        outgoingLinks = manager.returnOutgoingLinksWithTypes(subject, labels, db_graphname);
         JSONObject result = createJsonFile(outgoingLinks, subjectLabel, subjectType, subject);
-        
-        
-        if(show_incomingLinks.equals("false")){
+
+        if (show_incomingLinks.equals("false")) {
             return result;
-        }else{
-           
+        } else {
+
             Map<Triple, List<Triple>> incomingLinks = new HashMap<Triple, List<Triple>>();
             incomingLinks = manager.returnIncomingLinksWithTypes(subject, labels, db_graphname, exclusions);
             JSONObject result0 = createInvertJsonFile(incomingLinks, subjectLabel, subjectType, subject);
 
             //merge json shows inverse labels otherwise only outgoing links 
             return mergeJson(result, result0, subjectLabel, subjectType, subject);//result;
-        
+
         }
 
-     
-        
-
     }
-    
+
     /**
-     * **************************Blazegraph Case ***************************
+     * **************************Blazegraph Case
+     *
+     ***************************
      * @param resource
      *
      * @return
@@ -302,8 +304,7 @@ public class GetData extends HttpServlet {
      * @throws org.openrdf.query.MalformedQueryException
      * @throws org.openrdf.query.QueryEvaluationException
      */
-    
-    public static JSONObject blazegraphcase(String resource,String label,String pref_labels,String show_incomingLinks) throws RepositoryException, MalformedQueryException, QueryEvaluationException, Exception {
+    public static JSONObject blazegraphcase(String resource, String label, String pref_labels, String show_incomingLinks) throws RepositoryException, MalformedQueryException, QueryEvaluationException, Exception {
 
         String subject = resource;
 
@@ -334,7 +335,7 @@ public class GetData extends HttpServlet {
         if ((subjectLabel.isEmpty()) && (pref_lbls.length > 0)) {
             subjectLabel = manager.returnLabel(subject, pref_lbls[0]);
         }
-                
+
         Map<Triple, List<Triple>> outgoingLinks = new HashMap<Triple, List<Triple>>();
         // Map<Triple, List<Triple>> incomingLinks = new HashMap<Triple, List<Triple>>();
 
@@ -347,10 +348,10 @@ public class GetData extends HttpServlet {
             }
         }
 
-        outgoingLinks = manager.returnOutgoingLinksWithTypes(subject, labels); 
+        outgoingLinks = manager.returnOutgoingLinksWithTypes(subject, labels);
 
         JSONObject result = createJsonFile(outgoingLinks, subjectLabel, subjectType, subject);
-        
+
         executor.shutdownNow();
         httpClient.stop();
         httpClient.destroy();
@@ -358,7 +359,6 @@ public class GetData extends HttpServlet {
 
         return result;
     }
-
 
     /**
      * **************************File Case******************************
@@ -371,19 +371,17 @@ public class GetData extends HttpServlet {
      * @throws QueryEvaluationException
      * @throws Exception
      */
-    
-    public static JSONObject filecase(String resource, String filename,String label,String pref_labels,String show_incomingLinks, String parentProperty) throws RepositoryException, MalformedQueryException, QueryEvaluationException, Exception {
-        
+    public static JSONObject filecase(String resource, String filename, String label, String pref_labels, String show_incomingLinks, String parentProperty) throws RepositoryException, MalformedQueryException, QueryEvaluationException, Exception {
+
         GetConfigProperties app = new GetConfigProperties();
         Properties props = app.getConfig("config.properties");
 
         String defaultfolder = props.getProperty("default_folder").trim();
         String filepath = props.getProperty("filename").trim();
-        
+
         String prefix = props.getProperty("prefix").trim();
-       // String label = props.getProperty("schema_label").trim();
-      //  String pref_labels = props.getProperty("pref_labels").trim();
-      
+        // String label = props.getProperty("schema_label").trim();
+        //  String pref_labels = props.getProperty("pref_labels").trim();
 
         String subject = resource;
 
@@ -410,14 +408,13 @@ public class GetData extends HttpServlet {
         //String subjectLabel = manager.returnLabel(subject, label);
         String subjectLabel = "";
         String subjectType = "";
-        if(resource.startsWith("http://") || resource.startsWith("https://") || resource.startsWith("urn:uuid:")){
-            
+        if (resource.startsWith("http://") || resource.startsWith("https://") || resource.startsWith("urn:uuid:")) {
+
             subjectLabel = manager.returnLabel(subject, new HashSet<String>(Arrays.asList(label)));
             subjectType = manager.returnType(subject);
-        
 
             if ((subjectLabel.isEmpty()) && (pref_lbls.length > 0)) {
-               // subjectLabel = manager.returnLabel(subject, pref_lbls[0]);
+                // subjectLabel = manager.returnLabel(subject, pref_lbls[0]);
                 subjectLabel = manager.returnLabel(subject, new HashSet<String>(Arrays.asList(pref_lbls)));
             }
         }
@@ -427,44 +424,40 @@ public class GetData extends HttpServlet {
 
         labels.add(label);
         if (pref_lbls[0].length() > 0) {
-            for (int i = 0; i < pref_lbls.length; i++) {                
+            for (int i = 0; i < pref_lbls.length; i++) {
                 labels.add(pref_lbls[i]);
             }
-        } 
-                
-       // System.out.println("subject--->"+subject);
-       // System.out.println("labels"+labels);
+        }
+
+        // System.out.println("subject--->"+subject);
+        // System.out.println("labels"+labels);
         outgoingLinks = manager.returnOutgoingLinksWithTypes(subject, labels);
-        
+
         if (show_incomingLinks.equals("false")) {
             JSONObject result = createJsonFile(outgoingLinks, subjectLabel, subjectType, subject);
             return result;
         } else {
-                      
+
             String exclude_inverse = props.getProperty("exclude_inverse").trim();
-            exclude_inverse = exclude_inverse +","+prefix+parentProperty;
+            exclude_inverse = exclude_inverse + "," + prefix + parentProperty;
             List<String> exclusions = Arrays.asList(exclude_inverse.split(","));
-            
-           // System.out.println(prefix+parentProperty);
-            
-            
+
+            // System.out.println(prefix+parentProperty);
             //merge json shows inverse labels otherwise only outgoing links 
             Map<Triple, List<Triple>> incomingLinks = new HashMap<Triple, List<Triple>>();
             Map<Triple, List<Triple>> inverseLinks = new HashMap<Triple, List<Triple>>();
-            List<Map<Triple,List<Triple>>> incomingResults=manager.returnIncomingLinksWithTypes(subject, labels, "", exclusions);
-            
+            List<Map<Triple, List<Triple>>> incomingResults = manager.returnIncomingLinksWithTypes(subject, labels, "", exclusions);
+
             inverseLinks = incomingResults.get(0);
             incomingLinks = incomingResults.get(1);
             outgoingLinks.putAll(inverseLinks);
             JSONObject result = createJsonFile(outgoingLinks, subjectLabel, subjectType, subject);
-            
+
             JSONObject result0 = createInvertJsonFile(incomingLinks, subjectLabel, subjectType, subject);
             return mergeJson(result, result0, subjectLabel, subjectType, subject);//result;
         }
-        
-        //return result;
-                    
 
+        //return result;
     }
 
     /**
@@ -479,40 +472,45 @@ public class GetData extends HttpServlet {
      * @throws org.openrdf.query.MalformedQueryException
      * @throws org.openrdf.query.QueryEvaluationException
      */
-    
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, RepositoryException, MalformedQueryException, QueryEvaluationException, Exception {
 
         response.setContentType("text/html;charset=UTF-8");
 
+        GetConfigProperties app = new GetConfigProperties();
+        Properties props = app.getConfig("config.properties");
+
         try (PrintWriter out = response.getWriter()) {
 
             String resource = request.getParameter("resource");
             String filename = request.getParameter("folderpath");
-            
+
             String parentProperty = request.getParameter("parentProperty");
-            
+
             String schema_Label_uri = request.getParameter("schema_Label_uri");
             String pref_Label_uri = request.getParameter("pref_Label_uri");
             String show_incomingLinks = request.getParameter("show_incoming_links").trim();
 
-            GetConfigProperties app = new GetConfigProperties();
-            Properties props = app.getConfig("config.properties");
             String database = props.getProperty("database").trim();
-        
+
             switch (database) {
                 case "virtuoso":
-                    out.println(virtuosocase(resource,schema_Label_uri,pref_Label_uri,show_incomingLinks ));
+                    out.println(virtuosocase(resource, schema_Label_uri, pref_Label_uri, show_incomingLinks));
                     break;
                 case "blazegraph":
-                    out.println(blazegraphcase(resource,schema_Label_uri,pref_Label_uri,show_incomingLinks));
+                    out.println(blazegraphcase(resource, schema_Label_uri, pref_Label_uri, show_incomingLinks));
                     break;
                 case "file":
-                    out.println(filecase(resource, filename,schema_Label_uri,pref_Label_uri,show_incomingLinks, parentProperty));
+                    out.println(filecase(resource, filename, schema_Label_uri, pref_Label_uri, show_incomingLinks, parentProperty));
                     break;
                 default:
                     out.println("check_configuration");
                     break;
+            }
+        } catch (Exception ex) {
+            if (props.containsKey("debug") && Boolean.parseBoolean(props.get("debug").toString())) {
+                System.out.println(ex.getMessage());
+                ex.printStackTrace(System.out);
             }
         }
     }

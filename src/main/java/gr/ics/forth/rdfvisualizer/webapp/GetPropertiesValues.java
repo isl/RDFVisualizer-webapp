@@ -33,12 +33,11 @@ public class GetPropertiesValues extends HttpServlet {
              throws ServletException, IOException {
         
         response.setContentType("text/html;charset=UTF-8");
+        GetConfigProperties app = new GetConfigProperties();
+        Properties props = app.getConfig("config.properties");
         
         try (PrintWriter out = response.getWriter()) {
-
-            GetConfigProperties app = new GetConfigProperties();
-            Properties props = app.getConfig("config.properties");                                              
-            
+    
             JSONObject result = new JSONObject();
             
             result.put("prefix", props.getProperty("prefix").trim());
@@ -52,6 +51,11 @@ public class GetPropertiesValues extends HttpServlet {
             result.put("database", props.getProperty("database").trim());
                      
             out.println(result);
+        } catch (Exception ex) {
+            if (props.containsKey("debug") && Boolean.parseBoolean(props.get("debug").toString())) {
+                System.out.println(ex.getMessage());
+                ex.printStackTrace(System.out);
+            }
         }
     }
 
