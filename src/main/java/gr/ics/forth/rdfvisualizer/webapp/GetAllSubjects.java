@@ -38,11 +38,12 @@ public class GetAllSubjects extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, RepositoryException, MalformedQueryException, QueryEvaluationException {
         response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
+        /* TODO output your page here. You may use following sample code. */
 
-            GetConfigProperties app = new GetConfigProperties();
-            Properties props = app.getConfig("config.properties");
+        GetConfigProperties app = new GetConfigProperties();
+        Properties props = app.getConfig("config.properties");
+        
+        try (PrintWriter out = response.getWriter()) {
             String filepath = props.getProperty("filename").trim();
 
             String defaultfolder = props.getProperty("default_folder").trim();
@@ -64,6 +65,11 @@ public class GetAllSubjects extends HttpServlet {
             }
             //System.out.println(manager.sbj(schema_Label_uri));            
             out.println(manager.returnAllSubjectsWithLabes(schema_Label_uri));
+        } catch (Exception ex) {
+            if (props.containsKey("debug") && Boolean.parseBoolean(props.get("debug").toString())) {
+                System.out.println(ex.getMessage());
+                ex.printStackTrace(System.out);
+            }
         }
     }
 
