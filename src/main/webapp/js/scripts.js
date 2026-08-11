@@ -119,7 +119,7 @@ function createSubjectTable(data, showGraph) {
     if (data) {
         $.each(data, function (index, value) {
 
-            subjectTable.row.add([value.label || '(no label)', value.uri , value.graph  || '(default graph)', value.direct_cnt  || 0, `<button onclick="visualizeThis('` + value.uri + `')">Visualize</button></th>`]);
+            subjectTable.row.add([value.label || '(no label)', value.uri || '' , value.graph  || '(default graph)', value.direct_cnt  || 0, `<button onclick="visualizeThis('` + value.uri + `')">Visualize</button></th>`]);
             // html = html+ `<tr> <th>`+key+`</th>
             //                <th>`+value+`</th>    
             //                <th><button onclick="visualizeThis('`+value+`')">Visualize</button></th> </tr>`;
