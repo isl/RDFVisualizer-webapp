@@ -105,7 +105,10 @@ function visualizeThis(subject){
       'searching'   : true,
       'ordering'    : true,
       'info'        : true,
-      'autoWidth'   : false
+      'autoWidth'   : false,
+      //setting default page size to 100
+      'pageLength'  : 100
+      
     });
 
 
@@ -1763,3 +1766,13 @@ function rightClickMenu(value) {
         }
     });                
 };
+
+$(document).ready(function () {
+    //in case webapp is accessed without a resource URL parameter 
+    //then the expected action is to move to configuration page
+    const params = new URLSearchParams(window.location.search);
+    
+    if (!params.get('resource')) {
+        ShowConfiguration();
+    }    
+});

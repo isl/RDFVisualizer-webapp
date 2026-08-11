@@ -30,7 +30,7 @@
             <property_weight>145</property_weight>
     </weighted_property>
     <weighted_property>
-            <property_uri>http://www.cidoc-crm.org/cidoc-crm/P_12_was_present_at</property_uri>
+            <property_uri>http://www.cidoc-crm.org/cidoc-crm/P12i_was_present_at</property_uri>
             <property_weight>150</property_weight>
     </weighted_property>
    

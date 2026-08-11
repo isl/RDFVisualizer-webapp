@@ -126,6 +126,15 @@
                                         <div id="percOverview" class="box-body">                                            
                                             <div class='col-xs-12'>                                                                                                         
                                                 <div class="configuration" style=' padding:5px;'> 
+                                                    2026-08-11: Addition of Docker deployment support files and instructions. This first Docker version is tagged as 2.1 and corresponds to the code with timestamp: 2023-09-08T17:40 after applying the following minimal adaptation changes:<br>
+                                                    <ul>
+                                                        <li> Default home page set to configuration in case no resource has been selected in the url parameters</li>
+                                                        <li> Default page length has been set to 100</li>
+                                                        <li> Default value for show incoming links has been set to true </li>
+                                                        <li> Addition of debug parameter in config.properties. When enabled it logs messages produced by exception catch statements (such as .ttl parsing errors).</li>
+                                                        <li> Moved properties files in a config subfolder in order to facilitate volume mapping of docker containers </li>
+                                                        <li> Adapted footer messages to be synchronized with commit status</li>
+                                                    </ul>
                                                     2018-07-04: Object's uri tooltip appears in popover<br>
                                                     2018-06-06: Wrong context menu bug fixed (when appears a same instance of an object)<br>
                                                     2018-06-05: Single and double quote bug in predicates tooltip fixed <br>

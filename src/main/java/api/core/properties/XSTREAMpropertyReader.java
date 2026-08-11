@@ -10,6 +10,7 @@ import api.core.utils.IntPair;
 import com.thoughtworks.xstream.security.NoTypePermission;
 import com.thoughtworks.xstream.security.NullPermission;
 import com.thoughtworks.xstream.security.PrimitiveTypePermission;
+import gr.ics.forth.rdfvisualizer.webapp.GetConfigProperties;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  *
@@ -26,9 +28,12 @@ public class XSTREAMpropertyReader {
 
     public Map<String, List<IntPair>> returnPriorities(String filePath) throws FileNotFoundException {
 
+        GetConfigProperties app = new GetConfigProperties();
+        Properties props = app.getConfig("config.properties");
+
         FileReader reader = new FileReader(filePath);  // load file
         XStream xstream = new XStream();
-        
+
         //security
         // clear out existing permissions and set own ones
         xstream.addPermission(NoTypePermission.NONE);
@@ -36,8 +41,8 @@ public class XSTREAMpropertyReader {
         xstream.addPermission(PrimitiveTypePermission.PRIMITIVES);
         xstream.allowTypeHierarchy(Collection.class);
         // allow any type from the same package
-        xstream.allowTypesByWildcard(new String[] {
-        "api.core.**"
+        xstream.allowTypesByWildcard(new String[]{
+            "api.core.**"
         });
         //
         xstream.processAnnotations(Xproperties.class);
@@ -57,6 +62,9 @@ public class XSTREAMpropertyReader {
                 weightPair.setPairKey(wproperty.propertyUri);
                 weightPair.setPairValue(Integer.parseInt(wproperty.propertyWeight));
                 wPairs.add(weightPair);
+            }
+            if (props.containsKey("debug") && Boolean.parseBoolean(props.get("debug").toString())) {
+                System.out.println("adding " + wPairs.size() + " priorities for: " + pref.type_uri);
             }
             priorities.put(pref.type_uri, wPairs);
         }

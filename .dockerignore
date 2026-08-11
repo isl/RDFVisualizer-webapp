@@ -1,0 +1,6 @@
+target/
+# .git repository should not be ignored.  it is used by dockerfile .git commit information retrieval
+#.git/
+.idea/
+*.iml
+nb-configuration.xml

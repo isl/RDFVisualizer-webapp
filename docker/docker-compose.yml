@@ -1,0 +1,12 @@
+services:
+  rdfv:
+    image: ${RDFV_IMAGE}
+    container_name: ${RDFV_CONTAINER_NAME}
+    restart: unless-stopped
+
+    ports:
+      - "${RDFV_PORT}:8080"
+
+    volumes:
+      - "${RDFV_CONFIG_DIR}:/usr/local/tomcat/webapps/RDFV/WEB-INF/classes/config"
+      - "${RDFV_UPLOADS_DIR}:/app/uploads"

@@ -25,7 +25,7 @@ import org.json.JSONArray;
 /**
  *
  * @author cpetrakis
- * 
+ *
  */
 public class PredicatesPriority extends HttpServlet {
 
@@ -36,18 +36,20 @@ public class PredicatesPriority extends HttpServlet {
      * @param request servlet request
      * @param response servlet response
      * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs     
+     * @throws IOException if an I/O error occurs
      */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         response.setContentType("text/html;charset=UTF-8");
 
+        GetConfigProperties app = new GetConfigProperties();
+        Properties props = app.getConfig("config.properties");
         try (PrintWriter out = response.getWriter()) {
 
             String subject_type = request.getParameter("subject_type");
             String preds = request.getParameter("preds");
-          
+
             if (subject_type != null) {
 
                 ArrayList<String> predicate_Array = new ArrayList<String>();
@@ -59,17 +61,14 @@ public class PredicatesPriority extends HttpServlet {
 
                 Map<String, List<IntPair>> priorities = new HashMap<String, List<IntPair>>();
 
-                GetConfigProperties app = new GetConfigProperties();
-                Properties props = app.getConfig("config.properties");
                 String properties_xml = props.getProperty("priorities_xml").trim();
-                
+
                 XSTREAMpropertyReader xreader = new XSTREAMpropertyReader();
-                priorities = xreader.returnPriorities(properties_xml);                
+                priorities = xreader.returnPriorities(properties_xml);
 
                 Prioritise pr = new Prioritise();
                 Map<String, List<IntPair>> prioritiesSorted = new HashMap<String, List<IntPair>>();
                 prioritiesSorted = pr.prioritiseProperties(priorities);
-                                
 
                 ArrayList<String> final_Array = new ArrayList<String>();
 
@@ -88,15 +87,20 @@ public class PredicatesPriority extends HttpServlet {
 
                     Gson gson = new Gson();
                     String json = gson.toJson(final_Array);
-                    out.println(json);                    
-                    
-                } else {                   
+                    out.println(json);
+
+                } else {
                     out.println(-1);
                 }
             } else {
                 out.println(-1);
             }
 
+        } catch (Exception ex) {
+            if (props.containsKey("debug") && Boolean.parseBoolean(props.get("debug").toString())) {
+                System.out.println(ex.getMessage());
+                ex.printStackTrace(System.out);
+            }
         }
     }
 
