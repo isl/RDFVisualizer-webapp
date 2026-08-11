@@ -107,29 +107,42 @@ function visualizeThis(subject){
       'info'        : true,
       'autoWidth'   : false,
       //setting default page size to 100
-      'pageLength'  : 100
+      'pageLength'  : 100,
+      
+      'order': [[ 3, "desc" ], [0, "asc"]]
       
     });
 
 
-function createSubjectTable(data) {
-    subjectTable.clear()
+function createSubjectTable(data, showGraph) {
+    subjectTable.clear();
     if (data) {
-        $.each(data, function (key, value) {
+        $.each(data, function (index, value) {
 
-            subjectTable.row.add([key, value, `<button onclick="visualizeThis('` + value + `')">Visualize</button></th>`]);
+            subjectTable.row.add([value.label || '(no label)', value.uri , value.graph  || '(default graph)', value.direct_cnt  || 0, `<button onclick="visualizeThis('` + value.uri + `')">Visualize</button></th>`]);
             // html = html+ `<tr> <th>`+key+`</th>
             //                <th>`+value+`</th>    
             //                <th><button onclick="visualizeThis('`+value+`')">Visualize</button></th> </tr>`;
         });
         subjectTable.draw();
+        if(showGraph){
+            subjectTable.column(2).visible(true);
+        }
+        else{
+            subjectTable.column(2).visible(false);
+        }
         //$('#subjects_content').append(html);
         $('#dataTable').show();
     }
 }
 
 function showSubjects(file) {
-
+    
+    let showGraph = false;
+    if (file.toLowerCase().endsWith('.trig')){
+        showGraph = true;
+    }
+    
     $.post("GetAllSubjects", {
         resource: "",
         folderpath: file,
@@ -138,8 +151,8 @@ function showSubjects(file) {
 
     }, function (response) {
         localStorage.setItem('selected_subjectsToshow', (response));
-        createSubjectTable(JSON.parse(response));
-      
+        createSubjectTable(JSON.parse(response),showGraph);
+        
     });
 
 }
@@ -297,14 +310,11 @@ function ShowConfiguration() {
     $('#nav_configuration').addClass('active');
     $('#configuration').fadeIn();
     
-    if(JSON.parse(localStorage.getItem("selected_subjectsToshow"))){
+    if(localStorage.getItem("selected_subjectsToshow") && JSON.parse(localStorage.getItem("selected_subjectsToshow"))){
         // createSubjectTable(localStorage.getItem("selected_subjectsToshow"));
+        createSubjectTable(JSON.parse(localStorage.getItem("selected_subjectsToshow")));
+        console.log(JSON.parse(localStorage.getItem("selected_subjectsToshow")));
     }
-    
-  
-    createSubjectTable(JSON.parse(localStorage.getItem("selected_subjectsToshow")));
-   console.log(JSON.parse(localStorage.getItem("selected_subjectsToshow")))
-    
 }
 /************************* Show home page**************************************/
 function ShowHome() {

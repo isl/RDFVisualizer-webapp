@@ -33,6 +33,11 @@ import org.json.JSONObject;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
+import org.apache.jena.query.Dataset;
+import org.apache.jena.query.DatasetFactory;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFDataMgr;
+import org.json.JSONArray;
 
 /**
  *
@@ -41,26 +46,50 @@ import org.openrdf.repository.RepositoryException;
 public class RDFfileManager {
 
     private Model model;
-    private Model schemaModel ;
+    private Model schemaModel;
 
-    public void readFile(File rdfFile, String rdfFormat) throws FileNotFoundException {
+    private Dataset ds;
 
-        Model model = ModelFactory.createDefaultModel();
+    public void readFile(File rdfFile) throws FileNotFoundException {
+
+        Dataset dataset = DatasetFactory.create();
         InputStream targetStream = new FileInputStream(rdfFile);
-        model.read(targetStream, null, rdfFormat);
-        this.model = model;
+        if (rdfFile.getAbsolutePath().toLowerCase().endsWith(".ttl")) {
+            RDFDataMgr.read(dataset, targetStream, Lang.TURTLE);
+        } else if (rdfFile.getAbsolutePath().toLowerCase().endsWith(".trig")) {
+            RDFDataMgr.read(dataset, targetStream, Lang.TRIG);
+        }
+        this.ds = dataset;
         this.schemaModel = ModelFactory.createDefaultModel();
         this.schemaModel.read("http://www.cidoc-crm.org/cidoc-crm/");
     }
-    
+
+    public void readTrigFile(File rdfFile) throws FileNotFoundException {
+        Dataset dataset = DatasetFactory.create();
+
+        InputStream in = new FileInputStream(rdfFile);
+        RDFDataMgr.read(dataset, in, Lang.TRIG);
+        this.model = null;
+        this.ds = dataset;
+        this.schemaModel = ModelFactory.createDefaultModel();
+        this.schemaModel.read("http://www.cidoc-crm.org/cidoc-crm/");
+    }
 
     public ResultSet query(String sparqlQuery) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
-
-        //List<RDFTriple> retList= new ArrayList<>();
-        Query query = QueryFactory.create(sparqlQuery);
-        QueryExecution qexec = QueryExecutionFactory.create(query, model);
-        ResultSet results = qexec.execSelect();
-        return results;
+        //System.out.println(sparqlQuery);
+        if (this.model != null) {
+            //List<RDFTriple> retList= new ArrayList<>();
+            Query query = QueryFactory.create(sparqlQuery);
+            QueryExecution qexec = QueryExecutionFactory.create(query, model);
+            ResultSet results = qexec.execSelect();
+            return results;
+        } else if (this.ds != null) {
+            Query query = QueryFactory.create(sparqlQuery);
+            QueryExecution qexec = QueryExecutionFactory.create(query, ds);
+            ResultSet results = qexec.execSelect();
+            return results;
+        }
+        return null;
     }
 
     public String selectAll() {
@@ -109,7 +138,7 @@ public class RDFfileManager {
 
     public String selectLabels(String resource, String labelProperty) {
         String queryString = "Select ?label where {<" + resource + "> <" + labelProperty + "> ?label}";
-                             
+
         return queryString;
     }
 
@@ -213,14 +242,14 @@ public class RDFfileManager {
                 + "OPTIONAL {?p " + labelPropertiesParam + " ?plabel }.\n"
                 + "OPTIONAL {?o " + labelPropertiesParam + "  ?olabel }.\n"
                 + "OPTIONAL {?o <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?otype} .\n";
-        if(!urisToExclude.isEmpty()){
-            queryString+="FILTER( ";
-            for(String excludedUri : urisToExclude){
-                queryString+="?p!=<"+excludedUri+"> &&";
+        if (!urisToExclude.isEmpty()) {
+            queryString += "FILTER( ";
+            for (String excludedUri : urisToExclude) {
+                queryString += "?p!=<" + excludedUri + "> &&";
             }
-            queryString=queryString.substring(0,queryString.length()-3)+")";
+            queryString = queryString.substring(0, queryString.length() - 3) + ")";
         }
-        queryString+="} \n"
+        queryString += "} \n"
                 + "UNION\n"
                 + "{ \n"
                 + "?o ?p <" + resource + "> .\n"
@@ -231,17 +260,16 @@ public class RDFfileManager {
                 + "OPTIONAL {?p " + labelPropertiesParam + "  ?plabel }.\n"
                 + "  \n"
                 + "FILTER(isLiteral(?o))\n";
-        if(!urisToExclude.isEmpty()){
-            queryString+="FILTER( ";
-            for(String excludedUri : urisToExclude){
-                queryString+="?p!=<"+excludedUri+"> &&";
+        if (!urisToExclude.isEmpty()) {
+            queryString += "FILTER( ";
+            for (String excludedUri : urisToExclude) {
+                queryString += "?p!=<" + excludedUri + "> &&";
             }
-            queryString=queryString.substring(0,queryString.length()-3)+")";
+            queryString = queryString.substring(0, queryString.length() - 3) + ")";
         }
-        queryString+="} "
+        queryString += "} "
                 + "}\n";
-        
-        
+
         /* String queryString
                 = "Select * from <" + graph + "> \n"
                 + "where\n"
@@ -275,7 +303,6 @@ public class RDFfileManager {
         }
 
         queryString += "} }\n";*/
-        
         return queryString;
     }
 
@@ -321,12 +348,12 @@ public class RDFfileManager {
 
     public String selectLabel(String resource, Set<String> labelProperties) {
         String queryString = "Select ?label where {<" + resource + "> ?label_property ?label .\n"
-                +"FILTER( ";
-        for(String labelProperty : labelProperties){
-            queryString+="?label_property=<"+labelProperty+"> || ";
+                + "FILTER( ";
+        for (String labelProperty : labelProperties) {
+            queryString += "?label_property=<" + labelProperty + "> || ";
         }
-        queryString=queryString.substring(0,queryString.length()-3)+") }";
-       
+        queryString = queryString.substring(0, queryString.length() - 3) + ") }";
+
         return queryString;
     }
 
@@ -344,13 +371,13 @@ public class RDFfileManager {
 
         for (; sparqlResults.hasNext();) {
             QuerySolution soln = sparqlResults.nextSolution();
-            label += soln.get("label").toString()+",";
-          //  label = label +','+soln.get("label").toString();
+            label += soln.get("label").toString() + ",";
+            //  label = label +','+soln.get("label").toString();
         }
-        if(label.endsWith(",")){
-            label=label.substring(0,label.length()-1);
+        if (label.endsWith(",")) {
+            label = label.substring(0, label.length() - 1);
         }
-    
+
         return label;
     }
 
@@ -384,20 +411,63 @@ public class RDFfileManager {
         return type;
     }
     /////////////////////////////////
-    
-      public JSONObject returnAllSubjectsWithLabes (String schema_Label_uri) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
-        String query = "select * where {?s <"+schema_Label_uri+"> ?p .} ";
+    public JSONArray returnAllSubjectsWithLabes(String schema_Label_uri) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
+        String query = "SELECT ?g ?s (coalesce(?p, \"\") as ?lbl) (COUNT(DISTINCT ?direct) AS ?direct_links_cnt) "
+                + "\n"
+                + "WHERE {"
+                + "  {"
+                + "    ?s a ?cls ."
+                + "    OPTIONAL {"
+                + "      ?s <" + schema_Label_uri + "> ?p"
+                + "    }\n"
+                + "    # 1-hop direct connections\n"
+                + "    OPTIONAL { "
+                + "      { ?s ?pDirect1 ?direct } "
+                + "      UNION "
+                + "      { ?direct ?pDirect2 ?s }"
+                + "    }"
+                + "    BIND(\"\" AS ?g)"
+                + "  }"
+                + "  UNION"
+                + "  {"
+                + "    GRAPH ?g {"
+                + "      ?s a ?cls ."
+                + "      OPTIONAL {"
+                + "        ?s <" + schema_Label_uri + "> ?p"
+                + "      }\n"
+                + "      # 1-hop direct connections\n"
+                + "      OPTIONAL { "
+                + "        { ?s ?pDirect1 ?direct } "
+                + "        UNION "
+                + "        { ?direct ?pDirect2 ?s }"
+                + "      }"
+                + "    }"
+                + " }"
+                + "} "
+                + "GROUP BY ?g ?s ?p";
+
+        //System.out.println(query);
         ResultSet sparqlResults = query(query);
-        JSONObject json = new JSONObject();
+        JSONArray json = new JSONArray();
 
         for (; sparqlResults.hasNext();) {
-            QuerySolution soln = sparqlResults.nextSolution();           
-            json.put(soln.get("p").toString(), soln.get("s").toString());
+            QuerySolution soln = sparqlResults.nextSolution();
+            JSONObject jsonrow = new JSONObject();
+            String g = soln.get("g").toString();
+            String s = soln.get("s").toString();
+            String p = soln.get("lbl").toString();
+            int direct_links_cnt = soln.get("direct_links_cnt").asLiteral().getInt();
+
+            jsonrow.put("graph", g);
+            jsonrow.put("uri", s);
+            jsonrow.put("label", p);
+            jsonrow.put("direct_cnt", direct_links_cnt);
+
+            json.put(jsonrow);
         }
         return json;
     }
-    
 
 //    public Map<String,List<String>> returnOutgoingLinks(String resource) throws RepositoryException, MalformedQueryException, QueryEvaluationException
 //    {
@@ -473,9 +543,9 @@ public class RDFfileManager {
     }
 
     public Map<Triple, List<Triple>> returnOutgoingLinksWithTypes(String resource, Set<String> labelProperty) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
-        
+
         Map<Triple, List<Triple>> outgoingLinks = new HashMap<Triple, List<Triple>>();
-        if(!resource.startsWith("http://") && !resource.startsWith("https://") && !resource.startsWith("urn:uuid:")){
+        if (!resource.startsWith("http://") && !resource.startsWith("https://") && !resource.startsWith("urn:uuid:")) {
             return outgoingLinks;
         }
         String query = selectAllOutgoingWithLabelsAndTypes(resource, labelProperty);
@@ -483,18 +553,17 @@ public class RDFfileManager {
 
         for (; sparqlResults.hasNext();) {
             QuerySolution soln = sparqlResults.nextSolution();
-       
+
             Triple mapKey = new Triple();
             Triple mapValue = new Triple();
 
             String key_uri = soln.get("p").toString();
             String key_label = "NOLABEL";
-            
+
             if (soln.get("plabel") != null) {
-                key_label = soln.get("plabel").toString();              
+                key_label = soln.get("plabel").toString();
             }
-          
-                
+
             String key_type = "NOTYPE";
             mapKey.setSubject(key_uri);
             mapKey.setLabel(key_label);
@@ -507,14 +576,14 @@ public class RDFfileManager {
             if (soln.get("olabel") != null) {
                 value_label = soln.get("olabel").toString();
             }
-            
+
             if (soln.get("otype") != null) {
                 value_type = soln.get("otype").toString();
             }
             mapValue.setSubject(value_uri);
             mapValue.setLabel(value_label);
             mapValue.setType(value_type);
-            
+
             if (outgoingLinks.containsKey(mapKey)) {
                 List<Triple> objects = outgoingLinks.get(mapKey);
 
@@ -528,11 +597,11 @@ public class RDFfileManager {
                 outgoingLinks.put(mapKey, objects);
             }
         }
-        for(List<Triple>  triples: outgoingLinks.values()){
-            for(Triple triple : triples){
-                if(!triple.getType().equals("NOTYPE")){
-                    String mergedLabels=this.returnLabel(triple.getSubject(), labelProperty);
-                    if(!mergedLabels.isEmpty()){
+        for (List<Triple> triples : outgoingLinks.values()) {
+            for (Triple triple : triples) {
+                if (!triple.getType().equals("NOTYPE")) {
+                    String mergedLabels = this.returnLabel(triple.getSubject(), labelProperty);
+                    if (!mergedLabels.isEmpty()) {
                         triple.setLabel(mergedLabels);
                     }
                 }
@@ -540,32 +609,32 @@ public class RDFfileManager {
         }
         return outgoingLinks;
     }
-        
+
     public List<Map<Triple, List<Triple>>> returnIncomingLinksWithTypes(String resource, Set<String> labelProperty, String graph, List<String> urisToExclude) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
         Map<Triple, List<Triple>> outgoingLinks = new HashMap<Triple, List<Triple>>();
         Map<Triple, List<Triple>> inversed = new HashMap<Triple, List<Triple>>();
-        if(!resource.startsWith("http://") && !resource.startsWith("https://") && !resource.startsWith("urn:uuid:")){
-            return Arrays.asList(inversed,outgoingLinks);
+        if (!resource.startsWith("http://") && !resource.startsWith("https://") && !resource.startsWith("urn:uuid:")) {
+            return Arrays.asList(inversed, outgoingLinks);
         }
-        
+
         String query = selectAllIncomingWithLabelsAndTypes(resource, labelProperty, graph, urisToExclude);
         ResultSet sparqlResults = query(query);
-       
+
         for (; sparqlResults.hasNext();) {
 
             QuerySolution soln = sparqlResults.nextSolution();
-           
+
             Triple mapKey = new Triple();
             Triple mapValue = new Triple();
 
             String key_uri = soln.get("p").toString();
             String key_label = "NOLABEL";
-            
+
             if (soln.get("plabel") != null) {
                 key_label = soln.get("plabel").toString();
             }
-            
+
             //String key_type = result.getBinding("ptype").getValue().stringValue();
             String key_type = "NOTYPE";
             mapKey.setSubject(key_uri);
@@ -587,20 +656,20 @@ public class RDFfileManager {
             mapValue.setLabel(value_label);
             mapValue.setType(value_type);
 
-            String inverseProperty=this.getInverseProperty(mapKey.getSubject());
-            if(inverseProperty!=null){
+            String inverseProperty = this.getInverseProperty(mapKey.getSubject());
+            if (inverseProperty != null) {
                 mapKey.setSubject(inverseProperty);
-                if(outgoingLinks.containsKey(mapKey)){                    
+                if (outgoingLinks.containsKey(mapKey)) {
                     List<Triple> objects = inversed.get(mapKey);
                     objects.add(mapValue);
                     inversed.put(mapKey, objects);
-                    
-                }else{
+
+                } else {
                     List<Triple> objects = new ArrayList();
                     objects.add(mapValue);
                     inversed.put(mapKey, objects);
                 }
-            }else{
+            } else {
                 if (outgoingLinks.containsKey(mapKey)) {
                     List<Triple> objects = outgoingLinks.get(mapKey);
                     objects.add(mapValue);
@@ -613,8 +682,8 @@ public class RDFfileManager {
                 }
             }
         }
-        
-        return Arrays.asList(inversed,outgoingLinks);
+
+        return Arrays.asList(inversed, outgoingLinks);
     }
 
     public List<String> returnSubjects(String namedGraph) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
@@ -632,11 +701,11 @@ public class RDFfileManager {
         }
         return subjects;
     }
-    
-    /* Retrieves the inverse property (if it exists). If it cannot find it, or it does not exist, it returns a null value */ 
-    public String getInverseProperty(String propertyUri) throws RepositoryException, MalformedQueryException, QueryEvaluationException{
+
+    /* Retrieves the inverse property (if it exists). If it cannot find it, or it does not exist, it returns a null value */
+    public String getInverseProperty(String propertyUri) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 //        System.out.println("check "+propertyUri);
-        String inverseProperty=null;
+        String inverseProperty = null;
 //        if(propertyUri.startsWith("http://www.w3.org/")){
 //            return inverseProperty;
 //        }
@@ -649,9 +718,9 @@ public class RDFfileManager {
 //        Model schemaModel = ModelFactory.createDefaultModel();
 //        schemaModel.read(schemaUrl);
 
-        NodeIterator propsIter=this.schemaModel.listObjectsOfProperty(schemaModel.getResource(propertyUri),schemaModel.getProperty("http://www.w3.org/2002/07/owl#inverseOf"));
-        if(propsIter.hasNext()){
-           inverseProperty=propsIter.next().asResource().getURI();
+        NodeIterator propsIter = this.schemaModel.listObjectsOfProperty(schemaModel.getResource(propertyUri), schemaModel.getProperty("http://www.w3.org/2002/07/owl#inverseOf"));
+        if (propsIter.hasNext()) {
+            inverseProperty = propsIter.next().asResource().getURI();
         }
         return inverseProperty;
     }

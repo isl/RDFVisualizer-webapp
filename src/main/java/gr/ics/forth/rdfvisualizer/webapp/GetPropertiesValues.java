@@ -8,6 +8,8 @@ package gr.ics.forth.rdfvisualizer.webapp;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -54,7 +56,7 @@ public class GetPropertiesValues extends HttpServlet {
         } catch (Exception ex) {
             if (props.containsKey("debug") && Boolean.parseBoolean(props.get("debug").toString())) {
                 System.out.println(ex.getMessage());
-                ex.printStackTrace(System.out);
+                Logger.getLogger(GetPropertiesValues.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }

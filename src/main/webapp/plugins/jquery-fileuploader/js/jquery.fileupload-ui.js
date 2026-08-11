@@ -204,7 +204,9 @@
                     selectedFilename['filename'] = $(this).parent().parent().find('.name').children().html();
                     localStorage.setItem('selected_filename', JSON.stringify(selectedFilename));
                     localStorage.setItem('filename', $(this).parent().parent().find('.name').children().html());
-                    
+                
+                    //show subjects will call GetAllSubjects servlet.
+                    //this seems to be the place where checkbox may be set to selected if file upload consists of just one file
                     if($('input[type="checkbox"]').is(":checked")){
                          $('#subjects_content').empty();
                          showSubjects($(this).parent().parent().find('.name').children().html());

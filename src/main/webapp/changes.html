@@ -126,6 +126,13 @@
                                         <div id="percOverview" class="box-body">                                            
                                             <div class='col-xs-12'>                                                                                                         
                                                 <div class="configuration" style=' padding:5px;'> 
+                                                    2026-08-11: <strong>dev branch</strong>. started support of the following features:
+                                                    <ul>
+                                                        <li> Added new columns in the subjects table for graph uri (useful for trig files) and direct links count in each graph (to assist finding the best starting point).</li>
+                                                        <li> Supported listing of multiple uris with the same configured label property (e.g. rdfs:label) in the contents table of each file. Before this change each label was associated with just one uri - not all uris where listed. </li>
+                                                        <li> Supported listing of uris without the configured label property (e.g. rdfs:label) in the contents table of each file. The only obligatory field for uris displayed in the table is to have at least one class specified (rdf:type property) in its container graph. <br> &nbsp;&nbsp; <strong>* Note:</strong> The visualize function does not yet work with uris without the configured label property.</li>
+                                                        <li> Started support of trig files. The selection table includes uris from all graphs including the default one if specified. <br> &nbsp;&nbsp; <strong>* Note:</strong> Trig files are not yet fully supported - they require named graph related adaptations.</li>                                                        
+                                                    </ul>
                                                     2026-08-11: Addition of Docker deployment support files and instructions. This first Docker version is tagged as 2.1 and corresponds to the code with timestamp: 2023-09-08T17:40 after applying the following minimal adaptation changes:<br>
                                                     <ul>
                                                         <li> Default home page set to configuration in case no resource has been selected in the url parameters</li>

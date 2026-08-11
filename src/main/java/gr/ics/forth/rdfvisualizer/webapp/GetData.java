@@ -389,12 +389,12 @@ public class GetData extends HttpServlet {
         File inputFile = new File(filepath);
 
         if (inputFile.exists()) {
-            manager.readFile(inputFile, "TURTLE");
+            manager.readFile(inputFile);
         } else {
             filename = defaultfolder + System.getProperty("file.separator") + filename;
             inputFile = new File(filename);
             if (inputFile.exists()) {
-                manager.readFile(inputFile, "TURTLE");
+                manager.readFile(inputFile);
             }
         }
 
@@ -510,7 +510,7 @@ public class GetData extends HttpServlet {
         } catch (Exception ex) {
             if (props.containsKey("debug") && Boolean.parseBoolean(props.get("debug").toString())) {
                 System.out.println(ex.getMessage());
-                ex.printStackTrace(System.out);
+                Logger.getLogger(GetData.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }

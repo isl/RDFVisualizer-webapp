@@ -25,7 +25,7 @@ $(function () {
     };
 
     var uploadedBytes = 0;
-     //console.log($.blueimp.fileupload.prototype.options);
+    //console.log($.blueimp.fileupload.prototype.options);
     // Initialize the jQuery File Upload widget:
     $('#fileupload').fileupload({
         // Uncomment the following to send cross-domain cookies:
@@ -34,48 +34,48 @@ $(function () {
         maxChunkSize: 10000000, // 10 MB
         formData: {'uploadId': uuid()},
         uploadedBytes: uploadedBytes,
-        
 
         add: function (e, data) {
             var that = this;
-            
-            var filetype = data.files[0].name.substr( (data.files[0].name.lastIndexOf('.') +1));
 
-            if(filetype!== 'ttl'){
-                  $('#unsupported_filetype').modal('show');
-                console.log(data.files[0].name.substr( (data.files[0].name.lastIndexOf('.') +1)))
-            }else{
-                
-            console.log('ttl mre ->'+data.files[0].name.substr( (data.files[0].name.lastIndexOf('.') +1)))
-         
-            $.getJSON('FileUploadServlet', {file: data.files[0].name}, function (result) {
-                console.log(result);
-                
-                var file = result.file;
-                console.log(file);
-                data.uploadedBytes = result.uploadedBytes;
-                console.log(data);
-                uploadedBytes = data.uploadedBytes;
-                console.log($.blueimp);
-                $.blueimp.fileupload.prototype.options.add.call(that, e, data);
-                console.log("-----------------");
-                console.log($.blueimp.fileupload.prototype.options);
-                
-                
-              /*  $('input[type="checkbox"]').on('change', function () {
-                    console.log($(this).parent().parent().find('.name').html());
-                    var selectedFilename = new Object();
-                    selectedFilename['filename']  = $(this).parent().parent().find('.name').html();    
-                    localStorage.setItem('selected_filename', JSON.stringify(selectedFilename));
-                    $('input[type="checkbox"]').not(this).prop('checked', false);
-                });*/
+            var filetype = data.files[0].name.substr((data.files[0].name.lastIndexOf('.') + 1));
 
-            });
-        }
+            if (filetype.toLowerCase() !== 'ttl' && filetype.toLowerCase() !== 'trig') {
+                $('#unsupported_filetype').modal('show');
+                console.log(data.files[0].name.substr((data.files[0].name.lastIndexOf('.') + 1)));
+            } else {
+
+                console.log('ttl or trig mre ->' + data.files[0].name.substr((data.files[0].name.lastIndexOf('.') + 1)));
+
+                $.getJSON('FileUploadServlet', {file: data.files[0].name}, function (result) {
+                    console.log(result);
+
+                    var file = result.file;
+                    console.log(file);
+                    data.uploadedBytes = result.uploadedBytes;
+                    console.log(data);
+                    uploadedBytes = data.uploadedBytes;
+                    console.log($.blueimp);
+                    $.blueimp.fileupload.prototype.options.add.call(that, e, data);
+                    console.log("-----------------");
+                    console.log($.blueimp.fileupload.prototype.options);
+                    
+
+
+                    /*  $('input[type="checkbox"]').on('change', function () {
+                     console.log($(this).parent().parent().find('.name').html());
+                     var selectedFilename = new Object();
+                     selectedFilename['filename']  = $(this).parent().parent().find('.name').html();    
+                     localStorage.setItem('selected_filename', JSON.stringify(selectedFilename));
+                     $('input[type="checkbox"]').not(this).prop('checked', false);
+                     });*/
+
+                });
+            }
         }
 
     });
-                
+
 
     // Load existing files:
     $('#fileupload').addClass('fileupload-processing');
@@ -91,11 +91,12 @@ $(function () {
                 $(this).removeClass('fileupload-processing');
             })
             .done(function (result) {
-                
+
                 $(this).fileupload('option', 'done')
                         // eslint-disable-next-line new-cap
                         .call(this, $.Event('done'), {result: result});
                 
+
             });
 
 });
