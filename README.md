@@ -11,7 +11,7 @@ RDF Visualizer supports browsing content from:
 
 Further information about the tool functionalities can be found [here.](https://cidoc-crm.org/Resources/rdf-visualizer)
 
-**Live Demo [here.](https://demos.isl.ics.forth.gr/RDFV-Demo/)**
+**Live Demo [here.](https://petrakis.info/RDFVisualizer/?resource=http%3A%2F%2Fcollection.britishmuseum.org%2Fid%2Fobject%2FJCF11740)**
 
 ### 2. Installation ###
 
@@ -253,11 +253,11 @@ Also you can pass the filename as a parameter creating urls like:
 [URL]: [port]/RDFVisualizer/?resource=[Subject URI]&filename=[Filename]
 e.g. http://localhost:8084/RDFVisualizer/?resource=http://www.mybuildingsample.com/building/1&filename=Mapping864.ttl
 
-Further documentation about the tool functionalities you can find [here](http://www.cidoc-crm.org/sites/default/files2/RDF%20visualiser.pdf)
+Further documentation about the tool functionalities you can find [here](http://www.cidoc-crm.org/sites/default/files/RDF%20visualiser.pdf)
 
 ### 5. Contact ### 
 
-Petrakis Kostas < cpetrakis@ics.forth.gr >
+Petrakis Kostas < petrakis1@gmail.com >
 
 
 
