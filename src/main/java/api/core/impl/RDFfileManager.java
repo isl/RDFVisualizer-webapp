@@ -7,7 +7,6 @@ package api.core.impl;
 
 import api.core.properties.Resources;
 import api.core.utils.GraphURIPair;
-import api.core.utils.Pair;
 import api.core.utils.Triple;
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,7 +31,6 @@ import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
-import org.apache.jena.rdf.model.Resource;
 import org.json.JSONObject;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
@@ -41,6 +39,7 @@ import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
+
 import org.apache.jena.vocabulary.RDF;
 import org.json.JSONArray;
 
@@ -84,9 +83,9 @@ public class RDFfileManager {
     public ResultSet query(String sparqlQuery) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
         //System.out.println(sparqlQuery);
         if(Resources.debug){
-            System.out.println("Received Query:\n----------------------");
-            System.out.println(sparqlQuery);
-            System.out.println("----------------------");
+//            System.out.println("Received Query:\n----------------------");
+//            System.out.println(sparqlQuery);
+//            System.out.println("----------------------");
         }
         if (this.model != null) {
             //List<RDFTriple> retList= new ArrayList<>();
@@ -249,29 +248,31 @@ public class RDFfileManager {
         labelPropertiesParam = labelPropertiesParam.substring(0, labelPropertiesParam.length() - 1);
         String queryString
                 = "Select *  \n"
-                + (graph.isEmpty()? "" : (" FROM<" + graph+">")) 
+                //+ (graph.isEmpty()? "" : (" FROM<" + graph+">")) 
                 + "where\n"
                 + "{ {\n"
+                + (graph.isEmpty()? "" : (" GRAPH<" + graph+"> {")) 
                 + "<" + resource + "> ?p ?o .\n"
-                + "<" + resource + ">  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?stype .\n"
-                + "OPTIONAL {<" + resource + ">  \n"
-                + labelPropertiesParam + "  ?slabel }.\n"
+                + "OPTIONAL { <" + resource + ">  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?stype }.\n"
+                + "OPTIONAL {<" + resource + ">  " + labelPropertiesParam + "  ?slabel }.\n"
                 + "OPTIONAL {?p " + labelPropertiesParam + " ?plabel }.\n"
                 + "OPTIONAL {?o " + labelPropertiesParam + "  ?olabel }.\n"
                 + "OPTIONAL {?o <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?otype} .\n"
+                + (graph.isEmpty()? "" : (" }")) 
                 + "} \n"
                 + "UNION\n"
                 + "{ \n"
-                + "<" + resource + "> ?p ?o \n"
-                + ".\n"
-                + "<" + resource + ">  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?stype .\n"
-                + "OPTIONAL {<" + resource + ">  \n"
-                + labelPropertiesParam + "  ?slabel }.\n"
+                + (graph.isEmpty()? "" : (" GRAPH<" + graph+"> {")) 
+                + "<" + resource + "> ?p ?o .\n"
+                + "OPTIONAL { <" + resource + ">  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?stype } ."
+                + "OPTIONAL {<" + resource + ">  "+ labelPropertiesParam + "  ?slabel }.\n"
                 + " OPTIONAL{?o " + labelPropertiesParam + "  ?olabel }.\n"
                 + "OPTIONAL {?p " + labelPropertiesParam + "  ?plabel }.\n"
-                + "  \n"
-                + "FILTER(isLiteral(?o))\n"
-                + "} }\n";
+              
+                + "FILTER(isLiteral(?o))"
+                + (graph.isEmpty()? "" : (" }"))
+                + "} "                
+                + "}\n";
         return queryString;
 
     }
@@ -380,11 +381,12 @@ public class RDFfileManager {
         //System.out.println("labels"+labelPropertiesParam);
         String queryString
                 = "Select * "
-                + (graph.isEmpty() ? "" : " from <" + graph + "> ")
+                //+ (graph.isEmpty() ? "" : " from <" + graph + "> ")
                 + "where"
                 //removing unecessary union with something that never resolves (if ?o is literal then it cannot be used as subject in a statement
                 //+ "{ { "
                 + "{ "
+                + (graph.isEmpty()? "" : (" GRAPH<" + graph+"> {")) 
                 + " ?o ?p <" + resource + ">. \n"
                 + "OPTIONAL { <" + resource + ">  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?stype }.\n"
                 + "OPTIONAL { <" + resource + "> " + labelPropertiesParam + "  ?slabel }. \n"
@@ -394,10 +396,12 @@ public class RDFfileManager {
         if (!urisToExclude.isEmpty()) {
             queryString += "FILTER( ";
             for (String excludedUri : urisToExclude) {
-                queryString += "?p!=<" + excludedUri + "> &&";
+                
+                queryString += " ?p!=<" + excludedUri + "> &&";
             }
             queryString = queryString.substring(0, queryString.length() - 3) + ")";
         }
+        queryString += (graph.isEmpty()? "" : (" }")); 
         queryString += "} \n";
         //the following included an unrsolvable pattern if FILTER(isLiteral(?o)) then ?o ?p ?res cannot occur
 //                + "UNION\n"
@@ -423,6 +427,7 @@ public class RDFfileManager {
         return queryString;
     }
 
+    /* not used
     public String selectAllInverseIncomingWithLabelsAndTypes(String resource, Set<String> labelProperties, String graph, String inverseProperty) {
         String labelPropertiesParam = "";
 
@@ -463,7 +468,7 @@ public class RDFfileManager {
         return queryString;
     }
 
-    /* not used
+    
     public String selectLabel(String resource, Set<String> labelProperties) {
         String queryString = "Select ?label where {<" + resource + "> ?label_property ?label .\n"
                 + "FILTER( ";
@@ -478,9 +483,10 @@ public class RDFfileManager {
     public String selectGraphLabel(String resource, String graph, Set<String> labelProperties) {
         
         String queryString = "Select ?label " 
-                + (graph.isEmpty()? "" : (" FROM<" + graph+">")) 
+                //+ (graph.isEmpty()? "" : (" FROM<" + graph+">")) 
                 + " where "
                 + "{"
+                + (graph.isEmpty()? "" : (" GRAPH<" + graph+"> {")) 
                 + " <" + resource + "> ?label_property ?label ."
                 + "FILTER( ";
         for (String labelProperty : labelProperties) {
@@ -488,6 +494,7 @@ public class RDFfileManager {
         }
         queryString = queryString.substring(0, queryString.length() - 3) 
                 + ") "
+                + (graph.isEmpty()? "" : (" }")) 
                 + "}";
 
         return queryString;
@@ -503,10 +510,12 @@ public class RDFfileManager {
     
     public String selectGraphType(String resource, String graph) {
         String queryString = "Select ?type " 
-                + (graph.isEmpty()? "" : (" FROM<" + graph+">")) 
+                //+ (graph.isEmpty()? "" : (" FROM<" + graph+">")) 
                 + "where "
                 + "{"
+                + (graph.isEmpty()? "" : (" GRAPH<" + graph+"> {")) 
                 + "  <" + resource + "> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type . "
+                + (graph.isEmpty()? "" : ("}")) 
                 + "}";
         return queryString;
     }
@@ -1072,6 +1081,9 @@ public class RDFfileManager {
             mapValue.setType(value_type);
 
             String inverseProperty = this.getInverseProperty(mapKey.getSubject());
+            if(key_uri.equalsIgnoreCase(RDF.type.getURI())){
+                inverseProperty = Resources.property_inverseOf_rdf_type;
+            }
             if (inverseProperty != null) {
                 mapKey.setSubject(inverseProperty);
                 if (outgoingLinks.containsKey(mapKey)) {

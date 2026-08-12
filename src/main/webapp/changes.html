@@ -46,7 +46,7 @@
                 <section class="sidebar">                  
                     <ul class="sidebar-menu">
                         <li class="header">MAIN NAVIGATION</li>                                                                                            
-                       
+
                         <li id="nav_home">
                             <a href="index.html"><i class="fa fa-home "></i> <span>Home</span></a>
                         </li>
@@ -97,7 +97,7 @@
                 </section>
                 <!-- /.sidebar -->
             </aside>
-          
+
             <!--***************************   HOME   **************************************-->                
             <div id="pt-main">
                 <div id="home">
@@ -120,13 +120,19 @@
                                             <div>                                                
                                                 <h4 class="box-title" style="font-size: 14px;"></h4>
                                             </div>
-                                          
+
                                         </div><!-- /.box-header -->
 
                                         <div id="percOverview" class="box-body">                                            
                                             <div class='col-xs-12'>                                                                                                         
                                                 <div class="configuration" style=' padding:5px;'> 
-                                                    2026-08-12: dev branch changes include:
+                                                    2026-08-13: dev branch Visualization adaptations:                                                    
+                                                    <ul>
+                                                        <li>added initial graph support and trig visualizations</li>
+                                                        <li>initial support for visualization of resources without label or type (needs something more)</li>
+                                                        <li>initial support for visualizing class uri references by using an inverseOf_rdf_type notation in order to show links to the instances</li>
+                                                    </ul>
+                                                    2026-08-12: dev branch changes include:                                                    
                                                     <ul>
                                                         <li>The requirement to have at least an rdf:type specified has been removed. Now all uris included in the .ttl or trig file are listed in the table of file contents.</li>
                                                         <li>Applied the following clustering logic:
@@ -145,13 +151,7 @@
                                                                 <li>Uris that have been used as clases (i.e. as ranges of an rdf:type statement) are suffixed by a <strong>(class)</strong> notation</li>
                                                                 <li>Visualize button opens a new window in order to avoid losing context of the file contents.</li>
                                                             </ul>
-                                                        </li> 
-                                                        <li>Visualization adaptations:
-                                                            <ul>
-                                                                <li>started adding graph support</li>
-                                                                <li>started support of resouces without label or type</li>
-                                                            </ul>
-                                                        </li>
+                                                        </li>                                                         
                                                     </ul>
                                                     2026-08-11: <strong>dev branch</strong>. started support of the following features:
                                                     <ul>
@@ -194,13 +194,13 @@
 
 
         </div>
-       <!-- <footer class="main-footer">
-            <strong>Copyright &copy; 2015 <a href="http://www.ics.forth.gr/isl" target="_blank">ICS - FORTH</a>.</strong> 
-            All rights reserved.
-        </footer>  -->
+        <!-- <footer class="main-footer">
+             <strong>Copyright &copy; 2015 <a href="http://www.ics.forth.gr/isl" target="_blank">ICS - FORTH</a>.</strong> 
+             All rights reserved.
+         </footer>  -->
         <!-- ./wrapper -->
 
-        
+
         <!-- TEMPLATE JAVASCRIPT LIBRARIES -->
 
         <script src="plugins/jQuery/jQuery-2.1.4.min.js"></script> <!-- jQuery 2.1.4 -->
@@ -210,6 +210,6 @@
         <script src="plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js"></script> <!-- Bootstrap WYSIHTML5 -->
         <script src="js/libs/template/app.min.js"></script>  <!-- AdminLTE App --> 
 
-    
+
     </body>
 </html>

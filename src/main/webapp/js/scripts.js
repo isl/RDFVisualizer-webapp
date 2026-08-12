@@ -270,7 +270,7 @@ $.post("GetPropertiesValues", {
 
         $(document).ready(function () {
             $('#SubmitBtn').click(function () {
-                getModel(($('#resource').val()));
+                getModel($('#resource').val(), $('#graph').val());
             });
         });
 
@@ -864,6 +864,7 @@ function getModel(resource, graph) {
    
     $.post("GetData", {
         resource: resource,
+        graph: graph,
         folderpath: folderpath,
         schema_Label_uri : schema_Label_uri,
         pref_Label_uri : pref_Label_uri,
@@ -1017,6 +1018,7 @@ function getModel(resource, graph) {
 
                     $.post("GetData", {
                         resource: this.uri,
+                        graph: graph,
                         folderpath: folderpath,
                         schema_Label_uri : schema_Label_uri,
                         pref_Label_uri : pref_Label_uri, 
@@ -1167,6 +1169,7 @@ function objectToSubject(resource, depth, showflag, curdepth, pred_pos) {
    
     $.post("GetData", {
         resource: resource,
+        graph: $('#graph').val(),
         folderpath: folderpath,
         schema_Label_uri : schema_Label_uri,
         pref_Label_uri : pref_Label_uri,
@@ -1293,6 +1296,7 @@ function objectToSubject(resource, depth, showflag, curdepth, pred_pos) {
                      
                         $.post("GetData", {
                             resource: this.uri,
+                            graph: $('#graph').val(),
                             folderpath: folderpath,
                             schema_Label_uri : schema_Label_uri,
                             pref_Label_uri : pref_Label_uri,

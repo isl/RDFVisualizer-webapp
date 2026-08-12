@@ -9,6 +9,7 @@ public class Resources {
 
     //Property file resources 
     public static boolean debug = false;
+    public static final String property_inverseOf_rdf_type = "inverseOf_rdf_type";
     public static final String propertyFilename = "properties.xml";
     //Property file resources
     public static final String inputFilePath = "inputFilePath";

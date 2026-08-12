@@ -31,6 +31,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.jena.vocabulary.RDF;
 import org.eclipse.jetty.client.HttpClient;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
@@ -440,15 +441,25 @@ public class GetData extends HttpServlet {
         if (show_incomingLinks.equals("false")) {
             JSONObject result = createJsonFile(outgoingLinks, subjectLabel, subjectType, subject);
             if (Resources.debug) {
-                System.out.println("#########");
-                System.out.println(result);
-                System.out.println("#########");
+//                System.out.println("#########");
+//                System.out.println(result);
+//                System.out.println("#########");
             }
             return result;
         } else {
 
             String exclude_inverse = props.getProperty("exclude_inverse").trim();
-            exclude_inverse = exclude_inverse + "," + prefix + parentProperty;
+            if (parentProperty!=null && !parentProperty.isEmpty()){
+                //added fix for the support of property_inverseOf_rdf_type
+                //not sure though what this code does - apart from this property_inverseOf_rdf_type property
+                if(parentProperty.equalsIgnoreCase(Resources.property_inverseOf_rdf_type)){
+                    exclude_inverse = exclude_inverse + "," + RDF.type.getURI(); 
+                }
+                else{
+                   exclude_inverse = exclude_inverse + "," + prefix + parentProperty; 
+                }
+               
+            }            
             List<String> exclusions = Arrays.asList(exclude_inverse.split(","));
 
             // System.out.println(prefix+parentProperty);
@@ -466,9 +477,9 @@ public class GetData extends HttpServlet {
             
             JSONObject mresult = mergeJson(result, result0, subjectLabel, subjectType, subject);
             if (Resources.debug) {
-                System.out.println("#########");
-                System.out.println(mresult);
-                System.out.println("#########");
+//                System.out.println("#########");
+//                System.out.println(mresult);
+//                System.out.println("#########");
             }
             return mresult;
         }
