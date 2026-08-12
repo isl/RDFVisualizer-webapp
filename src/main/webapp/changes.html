@@ -126,6 +126,27 @@
                                         <div id="percOverview" class="box-body">                                            
                                             <div class='col-xs-12'>                                                                                                         
                                                 <div class="configuration" style=' padding:5px;'> 
+                                                    2026-08-12: dev branch changes include:
+                                                    <ul>
+                                                        <li>The requirement to have at least an rdf:type specified has been removed. Now all uris included in the .ttl or trig file are listed in the table of file contents.</li>
+                                                        <li>Applied the following clustering logic:
+                                                            <ul>
+                                                                <li>We first sort uris based on the maximum sum of inbound and outbound links to other uris (excluding outbound rdf:type and literal values)</li>
+                                                                <li>The first uri in this list with the maximum number of links defines the first cluster.</li>
+                                                                <li>During cluster's identification we keep a list of neighbor uri links for all identified clusters. All neighbor uris of all identified clusters are excluded by the list of cluster candidates.</li>
+                                                                <li>Next clusters are defined by the first uri that is not included in the visited neighbor links of identified clusters</li>
+                                                                <li>Uris that have been used as classes (i.e. as ranges of an rdf:type statement) are also excluded from the list of potential cluster candidates</li>                                                                
+                                                            </ul>                                                            
+                                                        </li>
+                                                        <li>Table of file contents additions:
+                                                            <ul>
+                                                                <li>line background color notation for all uris that are defined as clusters</li>
+                                                                <li>Each label is followed by the list of specified classes in brackets e.g. Acropolis of Athens 8712059 [ E53_Place ]</li>
+                                                                <li>Uris that have been used as clases (i.e. as ranges of an rdf:type statement) are suffixed by a <strong>(class)</strong> notation</li>
+                                                                <li>Visualize button opens a new window in order to avoid losing context of the file contents.</li>
+                                                            </ul>
+                                                        </li>                                                        
+                                                    </ul>
                                                     2026-08-11: <strong>dev branch</strong>. started support of the following features:
                                                     <ul>
                                                         <li> Added new columns in the subjects table for graph uri (useful for trig files) and direct links count in each graph (to assist finding the best starting point).</li>

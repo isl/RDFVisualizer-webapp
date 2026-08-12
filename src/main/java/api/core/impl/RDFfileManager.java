@@ -5,6 +5,7 @@
  */
 package api.core.impl;
 
+import api.core.utils.GraphURIPair;
 import api.core.utils.Pair;
 import api.core.utils.Triple;
 import java.io.File;
@@ -13,12 +14,14 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -37,6 +40,7 @@ import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.vocabulary.RDF;
 import org.json.JSONArray;
 
 /**
@@ -412,99 +416,180 @@ public class RDFfileManager {
     }
     /////////////////////////////////
 
-    public JSONArray returnAllSubjectsWithLabes(String schema_Label_uri) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
-        String query = "SELECT ?g ?s (coalesce(?p, \"\") as ?lbl) (COUNT(DISTINCT ?direct) AS ?direct_links_cnt) "
-                + "\n"
-                + "WHERE {"
-                + "  {"
-                + "    ?s a ?cls ."
-                + "    OPTIONAL {"
-                + "      ?s <" + schema_Label_uri + "> ?p"
-                + "    }\n"
-                + "    # 1-hop direct connections\n"
-                + "    OPTIONAL { "
-                + "      { ?s ?pDirect1 ?direct } "
-                + "      UNION "
-                + "      { ?direct ?pDirect2 ?s }"
-                + "    }"
-                + "    BIND(\"\" AS ?g)"
-                + "  }"
-                + "  UNION"
-                + "  {"
-                + "    GRAPH ?g {"
-                + "      ?s a ?cls ."
-                + "      OPTIONAL {"
-                + "        ?s <" + schema_Label_uri + "> ?p"
-                + "      }\n"
-                + "      # 1-hop direct connections\n"
-                + "      OPTIONAL { "
-                + "        { ?s ?pDirect1 ?direct } "
-                + "        UNION "
-                + "        { ?direct ?pDirect2 ?s }"
-                + "      }"
-                + "    }"
-                + " }"
-                + "} "
-                + "GROUP BY ?g ?s ?p";
+//    public JSONObject returnAllSubjectsWithLabes (String schema_Label_uri) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
+//        //switched back to previous implementation - replaced by returnAllURIs
+//        String query = "select * where {?s <"+schema_Label_uri+"> ?p .} ";
+//        ResultSet sparqlResults = query(query);
+//        JSONObject json = new JSONObject();
+//
+//        for (; sparqlResults.hasNext();) {
+//            QuerySolution soln = sparqlResults.nextSolution();           
+//            json.put(soln.get("p").toString(), soln.get("s").toString());
+//        }
+//        return json;
+//    }
+    public JSONArray returnAllURIs(String schema_Label_uri) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
-        //System.out.println(query);
-        ResultSet sparqlResults = query(query);
-        JSONArray json = new JSONArray();
-
-        for (; sparqlResults.hasNext();) {
-            QuerySolution soln = sparqlResults.nextSolution();
-            JSONObject jsonrow = new JSONObject();
-            String g = soln.get("g").toString();
-            String s = soln.get("s").toString();
-            String p = soln.get("lbl").toString();
-            int direct_links_cnt = soln.get("direct_links_cnt").asLiteral().getInt();
-
-            jsonrow.put("graph", g);
-            jsonrow.put("uri", s);
-            jsonrow.put("label", p);
-            jsonrow.put("direct_cnt", direct_links_cnt);
-
-            json.put(jsonrow);
+        JSONArray retResults = new JSONArray();
+        //this is just for files so default unnamed graph may contain triples - this is why a union is necessary
+        /*
+        SELECT ?g ?uri ?p ?target (isIRI(?target) as isLinkToIRI)
+        WHERE {
+          {
+            ?uri ?p ?target .	
+            FILTER(isIRI(?uri)).
+            BIND("" as ?g).
+          }
+          UNION
+          {
+            GRAPH ?g {    
+              ?uri ?p ?target .	
+              FILTER(isIRI(?uri)).
+            }
+          }
         }
-        return json;
+         */
+        HashMap<String, HashMap<String, GraphURIPair>> vals = new HashMap();
+        String query1Outgoing = "SELECT ?g ?uri ?p ?target (isIRI(?target) as ?isLinkToIRI)"
+                + "        WHERE { "
+                + "          { "
+                + "            ?uri ?p ?target . "
+                + "            FILTER(isIRI(?uri)). "
+                + "            BIND(\"\" as ?g). "
+                + "          } "
+                + "          UNION "
+                + "          { "
+                + "            GRAPH ?g { "
+                + "              ?uri ?p ?target . "
+                + "              FILTER(isIRI(?uri)). "
+                + "            } "
+                + "          } "
+                + "        }";
+        
+
+        ResultSet sparqlResults1 = query(query1Outgoing);
+
+        for (; sparqlResults1.hasNext();) {
+            QuerySolution soln = sparqlResults1.nextSolution();
+                        
+            //"SELECT ?g ?uri ?p ?target (isIRI(?target) as ?isLinkToIRI)"
+            String graph = soln.get("g").toString();
+            String uri = soln.get("uri").toString();
+            
+            if (!vals.containsKey(graph)) {
+                vals.put(graph, new HashMap());
+            }
+            if (!vals.get(graph).containsKey(uri)) {
+                vals.get(graph).put(uri,  new GraphURIPair(graph, uri));
+            }
+            
+            GraphURIPair pair = vals.get(graph).get(uri);
+            
+            // here we will identify all labels predicates
+            String p = soln.get("p").toString();
+            boolean isLinkToIRI =  soln.get("isLinkToIRI").asLiteral().getBoolean();
+            pair.addOutgoingLink();
+            
+            //may also exclude type (or collect it)
+            if(p.equalsIgnoreCase(RDF.type.getURI())){
+                pair.addClass(soln.get("target").toString());
+            }
+            if(p.equalsIgnoreCase(schema_Label_uri)){
+                //pair.addLabel(soln.getLiteral("target").getLexicalForm());
+                //to string will result in "text"@en if langcode is present so we have more information to select the best label
+                pair.addLabel(soln.getLiteral("target").toString());
+            }
+            else{                
+                if(isLinkToIRI){
+                    String target = soln.get("target").toString();
+                    pair.addNeighborGraphUriPair(target);
+                    pair.addOutgoingLinkToInstance();
+                }
+            }
+        }
+        
+        String query2Incoming = "SELECT ?g ?uri ?p ?source"
+                + "        WHERE { "
+                + "          { "
+                + "            ?source ?p ?uri . "
+                + "            FILTER(isIRI(?uri)). "
+                + "            BIND(\"\" as ?g). "
+                + "          } "
+                + "          UNION "
+                + "          { "
+                + "            GRAPH ?g { "
+                + "              ?source ?p ?uri . "
+                + "              FILTER(isIRI(?uri)). "
+                + "            } "
+                + "          } "
+                + "        }";
+
+        
+        ResultSet sparqlResults2 = query(query2Incoming);
+
+        for (; sparqlResults2.hasNext();) {
+            QuerySolution soln = sparqlResults2.nextSolution();
+            
+            //"SELECT ?g ?uri ?p ?source"
+            String graph = soln.get("g").toString();
+            String uri = soln.get("uri").toString();
+            
+            if (!vals.containsKey(graph)) {
+                vals.put(graph, new HashMap());
+            }
+            if (!vals.get(graph).containsKey(uri)) {
+                vals.get(graph).put(uri,  new GraphURIPair(graph, uri));
+            }
+            
+            GraphURIPair pair = vals.get(graph).get(uri);
+            
+            // here we will identify all labels predicates
+            String p = soln.get("p").toString();
+            if(p.equalsIgnoreCase(RDF.type.getURI())){
+                pair.setUsedAsClass(true);
+            }
+            String src = soln.get("source").toString();
+            pair.addIncomingLink();
+            pair.addNeighborGraphUriPair(src);
+        }
+        
+        List<GraphURIPair> sortedPairs = vals.values().stream()
+            .flatMap(innerMap -> innerMap.values().stream())
+            .sorted(Comparator.comparingInt(GraphURIPair::getLinksToInstancesCount).reversed())
+            .collect(Collectors.toList());
+        
+        HashSet<String> visitedNeighborGraphUriPairs = new HashSet();
+        sortedPairs.forEach(pair -> {
+            JSONObject jsonrow = new JSONObject();
+            jsonrow.put("graph", pair.getGraph());
+            jsonrow.put("uri", pair.getUri());
+            jsonrow.put("uriClasses", pair.getClassesAsString());
+            jsonrow.put("uriIsAlsoGraph", vals.containsKey(pair.getUri()));
+            
+            jsonrow.put("label", pair.getBestLabelChoice());
+            jsonrow.put("uriPrefix", pair.getUriPrefix());
+            jsonrow.put("uriLocalName", pair.getUriLocalName());
+            jsonrow.put("direct_cnt", pair.getLinksToInstancesCount());
+            jsonrow.put("usedAsClass", pair.getUsedAsClass());
+            jsonrow.put("isClusterRoot", false);
+            if(!visitedNeighborGraphUriPairs.contains(pair.getGraph()+ pair.getUri())){
+                if(pair.getUsedAsClass()){
+                    visitedNeighborGraphUriPairs.add(pair.getGraph()+ pair.getUri());
+                }
+                else{
+                    //characterize as cluster root only if not used as class
+                    jsonrow.put("isClusterRoot", true);                    
+                }
+                visitedNeighborGraphUriPairs.addAll(pair.getNeighborGraphUriPairs());
+            }
+            
+            retResults.put(jsonrow);
+            
+        });        
+        
+        return retResults;
     }
 
-//    public Map<String,List<String>> returnOutgoingLinks(String resource) throws RepositoryException, MalformedQueryException, QueryEvaluationException
-//    {
-//
-//        Map<String,List<String>> outgoingLinks = new HashMap<String,List<String>>();
-//        
-//        String query = selectAll(resource);
-//      
-//        List<BindingSet> sparqlResults = query(query);
-//       
-//        for (BindingSet result : sparqlResults) {
-//           
-//            System.out.println(result.toString());
-//           
-//            String key = result.getBinding("p").getValue().stringValue();
-//            String value = result.getBinding("o").getValue().stringValue();
-//            
-//             if(outgoingLinks.containsKey(key)) {
-//
-//             List<String> objects = outgoingLinks.get(key);
-//
-//             objects.add(value);
-//
-//        outgoingLinks.put(key, objects);
-//
-//    } else {
-//            List<String> objects = new ArrayList();
-//            objects.add(value);
-//            outgoingLinks.put(key, objects);
-//      
-//
-//    }
-//    }
-//
-//        return outgoingLinks;
-//        
-//    }
     public Map<Pair, List<Pair>> returnOutgoingLinks(String resource, String labelProperty) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
         Map<Pair, List<Pair>> outgoingLinks = new HashMap<Pair, List<Pair>>();

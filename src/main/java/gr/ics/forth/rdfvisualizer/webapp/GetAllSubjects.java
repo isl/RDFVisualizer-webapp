@@ -64,7 +64,8 @@ public class GetAllSubjects extends HttpServlet {
                 }
             }
             //System.out.println(manager.sbj(schema_Label_uri));            
-            out.println(manager.returnAllSubjectsWithLabes(schema_Label_uri));
+            //out.println(manager.returnAllSubjectsWithLabes(schema_Label_uri));
+            out.println(manager.returnAllURIs(schema_Label_uri));
         } catch (Exception ex) {
             if (props.containsKey("debug") && Boolean.parseBoolean(props.get("debug").toString())) {
                 System.out.println(ex.getMessage());

@@ -93,7 +93,7 @@ function visualizeThis(subject){
    
     var url_string = window.location.href;
     var url = new URL(url_string);
-    window.location =  url.origin + url.pathname +'?resource='+subject;
+    window.open(url.origin + url.pathname +'?resource='+subject);
     
 }
 
@@ -117,9 +117,37 @@ function visualizeThis(subject){
 function createSubjectTable(data, showGraph) {
     subjectTable.clear();
     if (data) {
+      
         $.each(data, function (index, value) {
-
-            subjectTable.row.add([value.label || '(no label)', value.uri || '' , value.graph  || '(default graph)', value.direct_cnt  || 0, `<button onclick="visualizeThis('` + value.uri + `')">Visualize</button></th>`]);
+              
+            //if( (value.isClusterRoot || false) && !value.usedAsClass){
+            let labelValue = value.label;
+            if (!labelValue){
+                labelValue = '(no label)';
+                /*if (value.uriLocalName){
+                    labelValue += ' Uri local name: ' + value.uriLocalName;
+                }
+                */
+            }
+            
+            if ((value.usedAsClass || false)){
+                // labelValue += ' <strong>(used as class)</strong>';                
+            }
+            else{
+                if (value.uriClasses){
+                    labelValue = labelValue + ' [ '+value.uriClasses + ' ]'; 
+                }
+            }
+            labelValue = labelValue.trim();
+            
+            var newRowNode = subjectTable.row.add([labelValue, (value.uri || '') + ((value.usedAsClass || false) ? ' <strong>(class)</strong>' : ''), value.graph  || '(default graph)', value.direct_cnt  || 0, `<button onclick="visualizeThis('` + value.uri + `')">Visualize</button></th>`]).draw(false).node();
+            if( (value.isClusterRoot || false)) {
+                $(newRowNode).css({
+                    'background-color': '#ffe6e6'
+                });
+            }
+            
+            //}
             // html = html+ `<tr> <th>`+key+`</th>
             //                <th>`+value+`</th>    
             //                <th><button onclick="visualizeThis('`+value+`')">Visualize</button></th> </tr>`;
