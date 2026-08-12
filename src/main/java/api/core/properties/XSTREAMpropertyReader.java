@@ -63,9 +63,9 @@ public class XSTREAMpropertyReader {
                 weightPair.setPairValue(Integer.parseInt(wproperty.propertyWeight));
                 wPairs.add(weightPair);
             }
-            if (props.containsKey("debug") && Boolean.parseBoolean(props.get("debug").toString())) {
-                System.out.println("adding " + wPairs.size() + " priorities for: " + pref.type_uri);
-            }
+//            if (props.containsKey("debug") && Boolean.parseBoolean(props.get("debug").toString())) {
+//                System.out.println("adding " + wPairs.size() + " priorities for: " + pref.type_uri);
+//            }
             priorities.put(pref.type_uri, wPairs);
         }
         return priorities;

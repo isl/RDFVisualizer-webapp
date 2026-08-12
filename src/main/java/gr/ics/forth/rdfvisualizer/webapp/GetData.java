@@ -8,6 +8,7 @@ package gr.ics.forth.rdfvisualizer.webapp;
 import api.core.impl.BlazeGraphManager;
 import api.core.impl.RDFfileManager;
 import api.core.impl.TripleStoreManager;
+import api.core.properties.Resources;
 import api.core.utils.Triple;
 import java.io.File;
 import java.io.IOException;
@@ -100,6 +101,7 @@ public class GetData extends HttpServlet {
         }
 
         result.put("Subject", subjectlist);
+        
         return result;
     }
 
@@ -371,7 +373,7 @@ public class GetData extends HttpServlet {
      * @throws QueryEvaluationException
      * @throws Exception
      */
-    public static JSONObject filecase(String resource, String filename, String label, String pref_labels, String show_incomingLinks, String parentProperty) throws RepositoryException, MalformedQueryException, QueryEvaluationException, Exception {
+    public static JSONObject filecase(String resource, String graph, String filename, String label, String pref_labels, String show_incomingLinks, String parentProperty) throws RepositoryException, MalformedQueryException, QueryEvaluationException, Exception {
 
         GetConfigProperties app = new GetConfigProperties();
         Properties props = app.getConfig("config.properties");
@@ -399,6 +401,7 @@ public class GetData extends HttpServlet {
         }
 
         subject = subject.replaceAll(" |\\r|\\n|\"", "");
+        
 
         if (subject.length() > 2000) {
             subject = subject.substring(0, 500);
@@ -410,12 +413,12 @@ public class GetData extends HttpServlet {
         String subjectType = "";
         if (resource.startsWith("http://") || resource.startsWith("https://") || resource.startsWith("urn:uuid:")) {
 
-            subjectLabel = manager.returnLabel(subject, new HashSet<String>(Arrays.asList(label)));
-            subjectType = manager.returnType(subject);
+            subjectLabel = manager.returnGraphLabel(subject, graph, new HashSet<String>(Arrays.asList(label)));
+            subjectType = manager.returnGraphType(subject, graph);
 
             if ((subjectLabel.isEmpty()) && (pref_lbls.length > 0)) {
-                // subjectLabel = manager.returnLabel(subject, pref_lbls[0]);
-                subjectLabel = manager.returnLabel(subject, new HashSet<String>(Arrays.asList(pref_lbls)));
+                //subjectLabel = manager.returnLabel(subject, new HashSet<String>(Arrays.asList(pref_lbls)));
+                subjectLabel = manager.returnGraphLabel(subject, graph, new HashSet<String>(Arrays.asList(pref_lbls)));
             }
         }
         Map<Triple, List<Triple>> outgoingLinks = new HashMap<Triple, List<Triple>>();
@@ -431,10 +434,16 @@ public class GetData extends HttpServlet {
 
         // System.out.println("subject--->"+subject);
         // System.out.println("labels"+labels);
-        outgoingLinks = manager.returnOutgoingLinksWithTypes(subject, labels);
+        //outgoingLinks = manager.returnOutgoingLinksWithTypes(subject, labels);
+        outgoingLinks = manager.returnGraphOutgoingLinksWithTypes(subject, graph, labels);
 
         if (show_incomingLinks.equals("false")) {
             JSONObject result = createJsonFile(outgoingLinks, subjectLabel, subjectType, subject);
+            if (Resources.debug) {
+                System.out.println("#########");
+                System.out.println(result);
+                System.out.println("#########");
+            }
             return result;
         } else {
 
@@ -446,7 +455,7 @@ public class GetData extends HttpServlet {
             //merge json shows inverse labels otherwise only outgoing links 
             Map<Triple, List<Triple>> incomingLinks = new HashMap<Triple, List<Triple>>();
             Map<Triple, List<Triple>> inverseLinks = new HashMap<Triple, List<Triple>>();
-            List<Map<Triple, List<Triple>>> incomingResults = manager.returnIncomingLinksWithTypes(subject, labels, "", exclusions);
+            List<Map<Triple, List<Triple>>> incomingResults = manager.returnGraphIncomingLinksWithTypes(subject, graph, labels, exclusions);
 
             inverseLinks = incomingResults.get(0);
             incomingLinks = incomingResults.get(1);
@@ -454,7 +463,14 @@ public class GetData extends HttpServlet {
             JSONObject result = createJsonFile(outgoingLinks, subjectLabel, subjectType, subject);
 
             JSONObject result0 = createInvertJsonFile(incomingLinks, subjectLabel, subjectType, subject);
-            return mergeJson(result, result0, subjectLabel, subjectType, subject);//result;
+            
+            JSONObject mresult = mergeJson(result, result0, subjectLabel, subjectType, subject);
+            if (Resources.debug) {
+                System.out.println("#########");
+                System.out.println(mresult);
+                System.out.println("#########");
+            }
+            return mresult;
         }
 
         //return result;
@@ -479,10 +495,12 @@ public class GetData extends HttpServlet {
 
         GetConfigProperties app = new GetConfigProperties();
         Properties props = app.getConfig("config.properties");
-
+        Resources.debug = props.containsKey("debug") && Boolean.parseBoolean(props.get("debug").toString());
+        
         try (PrintWriter out = response.getWriter()) {
 
             String resource = request.getParameter("resource");
+            String graph = request.getParameter("graph");
             String filename = request.getParameter("folderpath");
 
             String parentProperty = request.getParameter("parentProperty");
@@ -501,14 +519,14 @@ public class GetData extends HttpServlet {
                     out.println(blazegraphcase(resource, schema_Label_uri, pref_Label_uri, show_incomingLinks));
                     break;
                 case "file":
-                    out.println(filecase(resource, filename, schema_Label_uri, pref_Label_uri, show_incomingLinks, parentProperty));
+                    out.println(filecase(resource, graph!=null? graph.trim() : "", filename, schema_Label_uri, pref_Label_uri, show_incomingLinks, parentProperty));
                     break;
                 default:
                     out.println("check_configuration");
                     break;
             }
         } catch (Exception ex) {
-            if (props.containsKey("debug") && Boolean.parseBoolean(props.get("debug").toString())) {
+            if (Resources.debug) {
                 System.out.println(ex.getMessage());
                 Logger.getLogger(GetData.class.getName()).log(Level.SEVERE, null, ex);
             }

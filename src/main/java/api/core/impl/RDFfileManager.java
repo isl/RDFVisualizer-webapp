@@ -5,6 +5,7 @@
  */
 package api.core.impl;
 
+import api.core.properties.Resources;
 import api.core.utils.GraphURIPair;
 import api.core.utils.Pair;
 import api.core.utils.Triple;
@@ -67,7 +68,7 @@ public class RDFfileManager {
         this.schemaModel = ModelFactory.createDefaultModel();
         this.schemaModel.read("http://www.cidoc-crm.org/cidoc-crm/");
     }
-
+    /* not used
     public void readTrigFile(File rdfFile) throws FileNotFoundException {
         Dataset dataset = DatasetFactory.create();
 
@@ -78,9 +79,15 @@ public class RDFfileManager {
         this.schemaModel = ModelFactory.createDefaultModel();
         this.schemaModel.read("http://www.cidoc-crm.org/cidoc-crm/");
     }
+    */
 
     public ResultSet query(String sparqlQuery) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
         //System.out.println(sparqlQuery);
+        if(Resources.debug){
+            System.out.println("Received Query:\n----------------------");
+            System.out.println(sparqlQuery);
+            System.out.println("----------------------");
+        }
         if (this.model != null) {
             //List<RDFTriple> retList= new ArrayList<>();
             Query query = QueryFactory.create(sparqlQuery);
@@ -96,10 +103,12 @@ public class RDFfileManager {
         return null;
     }
 
+    /* not used
     public String selectAll() {
         String queryString = "Select ?s where {?s ?p ?o}";
         return queryString;
     }
+    
 
     public String selectAll(List<String> namedgraphs) {
         String fromClauses = "";
@@ -114,7 +123,7 @@ public class RDFfileManager {
         String queryString = "Select * where {<" + resource.getURI().toString() + "> ?p ?o}";
         return queryString;
     }
-
+    
     public String selectAll(Resource resource, List<String> namedgraphs) {
         String fromClauses = "";
         for (String namedgraph : namedgraphs) {
@@ -124,6 +133,7 @@ public class RDFfileManager {
         String queryString = "Select * \n" + fromClauses + "WHERE {<" + resource.getURI().toString() + "> ?p ?o}";
         return queryString;
     }
+
 
     public String selectAll(String resource) {
         String queryString = "Select ?p where {<" + resource + "> ?p ?o} ";
@@ -156,6 +166,7 @@ public class RDFfileManager {
         return queryString;
     }
 
+
     public String selectAllWithLabels(String resource, String labelProperty) {
         String queryString = "Select * where {<" + resource + "> ?p ?o .\n"
                 + "<" + resource + "> <" + labelProperty + "> ?slabel .\n"
@@ -165,7 +176,9 @@ public class RDFfileManager {
 
         return queryString;
     }
+    */
 
+    /*
     public String selectAllOutgoingWithLabelsAndTypes(String resource, Set<String> labelProperties) {
 //        String queryString = "Select * from <"+graph+"> where { {<"+resource+"> ?p ?o .\n"
 //                + "<"+resource+"> rdf:type ?stype .\n"
@@ -222,7 +235,48 @@ public class RDFfileManager {
         return queryString;
 
     }
+    */
+    public String selectAllGraphOutgoingWithLabelsAndTypes(String resource, String graph, Set<String> labelProperties) {
 
+        String labelPropertiesParam = "";
+
+        Iterator<String> iterator = labelProperties.iterator();
+        while (iterator.hasNext()) {
+            String labelProperty = iterator.next();
+            labelPropertiesParam = labelPropertiesParam + " <" + labelProperty + "> |";
+        }
+
+        labelPropertiesParam = labelPropertiesParam.substring(0, labelPropertiesParam.length() - 1);
+        String queryString
+                = "Select *  \n"
+                + (graph.isEmpty()? "" : (" FROM<" + graph+">")) 
+                + "where\n"
+                + "{ {\n"
+                + "<" + resource + "> ?p ?o .\n"
+                + "<" + resource + ">  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?stype .\n"
+                + "OPTIONAL {<" + resource + ">  \n"
+                + labelPropertiesParam + "  ?slabel }.\n"
+                + "OPTIONAL {?p " + labelPropertiesParam + " ?plabel }.\n"
+                + "OPTIONAL {?o " + labelPropertiesParam + "  ?olabel }.\n"
+                + "OPTIONAL {?o <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?otype} .\n"
+                + "} \n"
+                + "UNION\n"
+                + "{ \n"
+                + "<" + resource + "> ?p ?o \n"
+                + ".\n"
+                + "<" + resource + ">  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?stype .\n"
+                + "OPTIONAL {<" + resource + ">  \n"
+                + labelPropertiesParam + "  ?slabel }.\n"
+                + " OPTIONAL{?o " + labelPropertiesParam + "  ?olabel }.\n"
+                + "OPTIONAL {?p " + labelPropertiesParam + "  ?plabel }.\n"
+                + "  \n"
+                + "FILTER(isLiteral(?o))\n"
+                + "} }\n";
+        return queryString;
+
+    }
+
+    /* not used
     public String selectAllIncomingWithLabelsAndTypes(String resource, Set<String> labelProperties, String graph, List<String> urisToExclude) {
         String labelPropertiesParam = "";
         //System.out.println(urisToExclude);
@@ -274,39 +328,98 @@ public class RDFfileManager {
         queryString += "} "
                 + "}\n";
 
-        /* String queryString
-                = "Select * from <" + graph + "> \n"
-                + "where\n"
-                + "{ {\n"
-                + " ?o ?p <" + resource + ">.\n"
-                + "<" + resource + ">  rdf:type ?stype .\n"
-                + "<" + resource + ">  \n"
-                + labelPropertiesParam + "  ?slabel .\n"
+//        String queryString
+//                = "Select * from <" + graph + "> \n"
+//                + "where\n"
+//                + "{ {\n"
+//                + " ?o ?p <" + resource + ">.\n"
+//                + "<" + resource + ">  rdf:type ?stype .\n"
+//                + "<" + resource + ">  \n"
+//                + labelPropertiesParam + "  ?slabel .\n"
+//                + "OPTIONAL {?p " + labelPropertiesParam + " ?plabel }.\n"
+//                + "OPTIONAL {?o " + labelPropertiesParam + "  ?olabel }.\n"
+//                + "OPTIONAL {?o rdf:type ?otype} .\n";
+//
+//        for (int i = 0; i < urisToExclude.size(); i++) {
+//            queryString += " FILTER (?p!= <" + urisToExclude.get(i) + "> ) \n ";
+//        }
+//
+//        queryString += "} \n"
+//                + "UNION\n"
+//                + "{ \n"
+//                + "?o ?p <" + resource + "> .\n"
+//                + "<" + resource + ">  rdf:type ?stype .\n"
+//                + "<" + resource + ">  \n"
+//                + labelPropertiesParam + "  ?slabel .\n"
+//                + " OPTIONAL{?o " + labelPropertiesParam + "  ?olabel }.\n"
+//                + "OPTIONAL {?p " + labelPropertiesParam + "  ?plabel }.\n"
+//                + "  \n"
+//                + "FILTER(isLiteral(?o))\n";
+//
+//        for (int i = 0; i < urisToExclude.size(); i++) {
+//            queryString += " FILTER (?p!= <" + urisToExclude.get(i) + "> ) \n ";
+//        }
+//
+//        queryString += "} }\n";
+        
+        return queryString;
+    }
+    */
+    
+    public String selectAllGraphIncomingWithLabelsAndTypes(String resource, String graph, Set<String> labelProperties, List<String> urisToExclude) {
+        String labelPropertiesParam = "";
+        //System.out.println(urisToExclude);
+        Iterator<String> iterator = labelProperties.iterator();
+        while (iterator.hasNext()) {
+            String labelProperty = iterator.next();
+            labelPropertiesParam = labelPropertiesParam + " <" + labelProperty + "> |";
+        }
+
+        labelPropertiesParam = labelPropertiesParam.substring(0, labelPropertiesParam.length() - 1);
+
+        //System.out.println("labels"+labelPropertiesParam);
+        String queryString
+                = "Select * "
+                + (graph.isEmpty() ? "" : " from <" + graph + "> ")
+                + "where"
+                //removing unecessary union with something that never resolves (if ?o is literal then it cannot be used as subject in a statement
+                //+ "{ { "
+                + "{ "
+                + " ?o ?p <" + resource + ">. \n"
+                + "OPTIONAL { <" + resource + ">  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?stype }.\n"
+                + "OPTIONAL { <" + resource + "> " + labelPropertiesParam + "  ?slabel }. \n"
                 + "OPTIONAL {?p " + labelPropertiesParam + " ?plabel }.\n"
                 + "OPTIONAL {?o " + labelPropertiesParam + "  ?olabel }.\n"
-                + "OPTIONAL {?o rdf:type ?otype} .\n";
-
-        for (int i = 0; i < urisToExclude.size(); i++) {
-            queryString += " FILTER (?p!= <" + urisToExclude.get(i) + "> ) \n ";
+                + "OPTIONAL {?o <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?otype} .\n";
+        if (!urisToExclude.isEmpty()) {
+            queryString += "FILTER( ";
+            for (String excludedUri : urisToExclude) {
+                queryString += "?p!=<" + excludedUri + "> &&";
+            }
+            queryString = queryString.substring(0, queryString.length() - 3) + ")";
         }
+        queryString += "} \n";
+        //the following included an unrsolvable pattern if FILTER(isLiteral(?o)) then ?o ?p ?res cannot occur
+//                + "UNION\n"
+//                + "{ "
+//                + "?o ?p <" + resource + "> .\n"
+//                + " OPTIONAL { <" + resource + ">  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?stype } .\n"
+//                + " OPTIONAL { <" + resource + ">  "  + labelPropertiesParam + "  ?slabel } ."
+//                + " OPTIONAL{?o " + labelPropertiesParam + "  ?olabel }.\n"
+//                + "OPTIONAL {?p " + labelPropertiesParam + "  ?plabel }.\n"
+//                + "  "
+//                // propably wrong nothing can start from literal
+//                + "FILTER(isLiteral(?o))\n";
+//        if (!urisToExclude.isEmpty()) {
+//            queryString += "FILTER( ";
+//            for (String excludedUri : urisToExclude) {
+//                queryString += "?p!=<" + excludedUri + "> &&";
+//            }
+//            queryString = queryString.substring(0, queryString.length() - 3) + ")";
+//        }
+//        queryString += "} "
+//                + "}\n";
 
-        queryString += "} \n"
-                + "UNION\n"
-                + "{ \n"
-                + "?o ?p <" + resource + "> .\n"
-                + "<" + resource + ">  rdf:type ?stype .\n"
-                + "<" + resource + ">  \n"
-                + labelPropertiesParam + "  ?slabel .\n"
-                + " OPTIONAL{?o " + labelPropertiesParam + "  ?olabel }.\n"
-                + "OPTIONAL {?p " + labelPropertiesParam + "  ?plabel }.\n"
-                + "  \n"
-                + "FILTER(isLiteral(?o))\n";
-
-        for (int i = 0; i < urisToExclude.size(); i++) {
-            queryString += " FILTER (?p!= <" + urisToExclude.get(i) + "> ) \n ";
-        }
-
-        queryString += "} }\n";*/
         return queryString;
     }
 
@@ -350,6 +463,7 @@ public class RDFfileManager {
         return queryString;
     }
 
+    /* not used
     public String selectLabel(String resource, Set<String> labelProperties) {
         String queryString = "Select ?label where {<" + resource + "> ?label_property ?label .\n"
                 + "FILTER( ";
@@ -360,13 +474,44 @@ public class RDFfileManager {
 
         return queryString;
     }
+    */ 
+    public String selectGraphLabel(String resource, String graph, Set<String> labelProperties) {
+        
+        String queryString = "Select ?label " 
+                + (graph.isEmpty()? "" : (" FROM<" + graph+">")) 
+                + " where "
+                + "{"
+                + " <" + resource + "> ?label_property ?label ."
+                + "FILTER( ";
+        for (String labelProperty : labelProperties) {
+            queryString += "?label_property=<" + labelProperty + "> || ";
+        }
+        queryString = queryString.substring(0, queryString.length() - 3) 
+                + ") "
+                + "}";
 
+        return queryString;
+    }
+    
+    /* not used 
     public String selectType(String resource) {
         String queryString = "Select ?type where {<" + resource + "> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type .\n"
                 + " }";
         return queryString;
     }
+    */
+    
+    public String selectGraphType(String resource, String graph) {
+        String queryString = "Select ?type " 
+                + (graph.isEmpty()? "" : (" FROM<" + graph+">")) 
+                + "where "
+                + "{"
+                + "  <" + resource + "> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type . "
+                + "}";
+        return queryString;
+    }
 
+    /* not used 
     public String returnLabel(String resource, Set<String> labelProperties) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
         String query = selectLabel(resource, labelProperties);
@@ -384,7 +529,26 @@ public class RDFfileManager {
 
         return label;
     }
+    */
+    
+    public String returnGraphLabel(String resource, String graph, Set<String> labelProperties) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
+        String query = selectGraphLabel(resource, graph, labelProperties);
+        ResultSet sparqlResults = query(query);
+        String label = "";
+
+        for (; sparqlResults.hasNext();) {
+            QuerySolution soln = sparqlResults.nextSolution();
+            label += soln.get("label").toString() + ",";
+            //  label = label +','+soln.get("label").toString();
+        }
+        if (label.endsWith(",")) {
+            label = label.substring(0, label.length() - 1);
+        }
+
+        return label;
+    }
+    /* not used
     public String returnAll(String resource) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
         String query = selectAll(resource);
@@ -400,10 +564,26 @@ public class RDFfileManager {
         }
         return label;
     }
+    
 
     public String returnType(String resource) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
         String query = selectType(resource);
+        ResultSet sparqlResults = query(query);
+        String type = "";
+
+        for (; sparqlResults.hasNext();) {
+            QuerySolution soln = sparqlResults.nextSolution();
+            // System.out.println("LABEL: "+result.toString());
+            type = soln.get("type").toString();
+        }
+        return type;
+    }
+    */
+    
+    public String returnGraphType(String resource, String graph) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
+
+        String query = selectGraphType(resource, graph);
         ResultSet sparqlResults = query(query);
         String type = "";
 
@@ -590,6 +770,7 @@ public class RDFfileManager {
         return retResults;
     }
 
+    /* not used
     public Map<Pair, List<Pair>> returnOutgoingLinks(String resource, String labelProperty) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
         Map<Pair, List<Pair>> outgoingLinks = new HashMap<Pair, List<Pair>>();
@@ -626,7 +807,9 @@ public class RDFfileManager {
         }
         return outgoingLinks;
     }
-
+    */
+    
+    /*
     public Map<Triple, List<Triple>> returnOutgoingLinksWithTypes(String resource, Set<String> labelProperty) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
         Map<Triple, List<Triple>> outgoingLinks = new HashMap<Triple, List<Triple>>();
@@ -694,7 +877,77 @@ public class RDFfileManager {
         }
         return outgoingLinks;
     }
+    */
+    
+    public Map<Triple, List<Triple>> returnGraphOutgoingLinksWithTypes(String resource, String graph, Set<String> labelProperty) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
+        Map<Triple, List<Triple>> outgoingLinks = new HashMap<Triple, List<Triple>>();
+        if (!resource.startsWith("http://") && !resource.startsWith("https://") && !resource.startsWith("urn:uuid:")) {
+            return outgoingLinks;
+        }
+        String query = selectAllGraphOutgoingWithLabelsAndTypes(resource, graph, labelProperty);
+        ResultSet sparqlResults = query(query);
+
+        for (; sparqlResults.hasNext();) {
+            QuerySolution soln = sparqlResults.nextSolution();
+
+            Triple mapKey = new Triple();
+            Triple mapValue = new Triple();
+
+            String key_uri = soln.get("p").toString();
+            String key_label = "NOLABEL";
+
+            if (soln.get("plabel") != null) {
+                key_label = soln.get("plabel").toString();
+            }
+
+            String key_type = "NOTYPE";
+            mapKey.setSubject(key_uri);
+            mapKey.setLabel(key_label);
+            mapKey.setType(key_type);
+
+            String value_label = "NOLABEL";
+            String value_type = "NOTYPE";
+            String value_uri = soln.get("o").toString();
+
+            if (soln.get("olabel") != null) {
+                value_label = soln.get("olabel").toString();
+            }
+
+            if (soln.get("otype") != null) {
+                value_type = soln.get("otype").toString();
+            }
+            mapValue.setSubject(value_uri);
+            mapValue.setLabel(value_label);
+            mapValue.setType(value_type);
+
+            if (outgoingLinks.containsKey(mapKey)) {
+                List<Triple> objects = outgoingLinks.get(mapKey);
+
+                objects.add(mapValue);
+
+                outgoingLinks.put(mapKey, objects);
+
+            } else {
+                List<Triple> objects = new ArrayList();
+                objects.add(mapValue);
+                outgoingLinks.put(mapKey, objects);
+            }
+        }
+        for (List<Triple> triples : outgoingLinks.values()) {
+            for (Triple triple : triples) {
+                if (!triple.getType().equals("NOTYPE")) {
+                    String mergedLabels = this.returnGraphLabel(triple.getSubject(), graph, labelProperty);
+                    if (!mergedLabels.isEmpty()) {
+                        triple.setLabel(mergedLabels);
+                    }
+                }
+            }
+        }
+        return outgoingLinks;
+    }
+
+    /*
     public List<Map<Triple, List<Triple>>> returnIncomingLinksWithTypes(String resource, Set<String> labelProperty, String graph, List<String> urisToExclude) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
         Map<Triple, List<Triple>> outgoingLinks = new HashMap<Triple, List<Triple>>();
@@ -770,7 +1023,85 @@ public class RDFfileManager {
 
         return Arrays.asList(inversed, outgoingLinks);
     }
+    */
+    
+    public List<Map<Triple, List<Triple>>> returnGraphIncomingLinksWithTypes(String resource, String graph, Set<String> labelProperty, List<String> urisToExclude) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
+        Map<Triple, List<Triple>> outgoingLinks = new HashMap<Triple, List<Triple>>();
+        Map<Triple, List<Triple>> inversed = new HashMap<Triple, List<Triple>>();
+        if (!resource.startsWith("http://") && !resource.startsWith("https://") && !resource.startsWith("urn:uuid:")) {
+            return Arrays.asList(inversed, outgoingLinks);
+        }
+
+        String query = selectAllGraphIncomingWithLabelsAndTypes(resource, graph, labelProperty, urisToExclude);
+        ResultSet sparqlResults = query(query);
+
+        for (; sparqlResults.hasNext();) {
+
+            QuerySolution soln = sparqlResults.nextSolution();
+
+            Triple mapKey = new Triple();
+            Triple mapValue = new Triple();
+
+            String key_uri = soln.get("p").toString();
+            String key_label = "NOLABEL";
+
+            if (soln.get("plabel") != null) {
+                key_label = soln.get("plabel").toString();
+            }
+
+            //String key_type = result.getBinding("ptype").getValue().stringValue();
+            String key_type = "NOTYPE";
+            mapKey.setSubject(key_uri);
+            mapKey.setLabel(key_label);
+            mapKey.setType(key_type);
+
+            String value_label = "NOLABEL";
+            String value_type = "NOTYPE";
+            String value_uri = soln.get("o").toString();
+
+            if (soln.get("olabel") != null) {
+                value_label = soln.get("olabel").toString();
+            }
+
+            if (soln.get("otype") != null) {
+                value_type = soln.get("otype").toString();
+            }
+            mapValue.setSubject(value_uri);
+            mapValue.setLabel(value_label);
+            mapValue.setType(value_type);
+
+            String inverseProperty = this.getInverseProperty(mapKey.getSubject());
+            if (inverseProperty != null) {
+                mapKey.setSubject(inverseProperty);
+                if (outgoingLinks.containsKey(mapKey)) {
+                    List<Triple> objects = inversed.get(mapKey);
+                    objects.add(mapValue);
+                    inversed.put(mapKey, objects);
+
+                } else {
+                    List<Triple> objects = new ArrayList();
+                    objects.add(mapValue);
+                    inversed.put(mapKey, objects);
+                }
+            } else {
+                if (outgoingLinks.containsKey(mapKey)) {
+                    List<Triple> objects = outgoingLinks.get(mapKey);
+                    objects.add(mapValue);
+                    outgoingLinks.put(mapKey, objects);
+
+                } else {
+                    List<Triple> objects = new ArrayList();
+                    objects.add(mapValue);
+                    outgoingLinks.put(mapKey, objects);
+                }
+            }
+        }
+
+        return Arrays.asList(inversed, outgoingLinks);
+    }
+
+    /* not used
     public List<String> returnSubjects(String namedGraph) throws RepositoryException, MalformedQueryException, QueryEvaluationException {
 
         List<String> subjects = new ArrayList<>();
@@ -786,6 +1117,7 @@ public class RDFfileManager {
         }
         return subjects;
     }
+    */
 
     /* Retrieves the inverse property (if it exists). If it cannot find it, or it does not exist, it returns a null value */
     public String getInverseProperty(String propertyUri) throws RepositoryException, MalformedQueryException, QueryEvaluationException {

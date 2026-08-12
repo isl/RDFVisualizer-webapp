@@ -89,11 +89,16 @@ function resetURIS(){
             localStorage.setItem('URIS_json', JSON.stringify(json));
     }); 
 }
-function visualizeThis(subject){
+
+function visualizeThis(subject, graph){
    
     var url_string = window.location.href;
     var url = new URL(url_string);
-    window.open(url.origin + url.pathname +'?resource='+subject);
+    let params = '?resource='+subject;
+    if (graph){
+        params+= '&graph='+graph;
+    }
+    window.open(url.origin + url.pathname +params);
     
 }
 
@@ -140,7 +145,7 @@ function createSubjectTable(data, showGraph) {
             }
             labelValue = labelValue.trim();
             
-            var newRowNode = subjectTable.row.add([labelValue, (value.uri || '') + ((value.usedAsClass || false) ? ' <strong>(class)</strong>' : ''), value.graph  || '(default graph)', value.direct_cnt  || 0, `<button onclick="visualizeThis('` + value.uri + `')">Visualize</button></th>`]).draw(false).node();
+            var newRowNode = subjectTable.row.add([labelValue, (value.uri || '') + ((value.usedAsClass || false) ? ' <strong>(class)</strong>' : ''), value.graph  || '(default graph)', value.direct_cnt  || 0, `<button onclick="visualizeThis('` + value.uri + `', '` + (value.graph  ||'') + `')">Visualize</button></th>`]).draw(false).node();
             if( (value.isClusterRoot || false)) {
                 $(newRowNode).css({
                     'background-color': '#ffe6e6'
@@ -247,7 +252,16 @@ $.post("GetPropertiesValues", {
  
         if (!(_GET.resource === undefined)) {    
             $('#resource').val(_GET.resource); 
-            getModel(_GET.resource.replace(/ /g, '%20'));
+            let gvar = '';
+            if(!(_GET.graph === undefined)) {  
+                $('#graph').show();
+                gvar = _GET.graph;
+                $('#graph').val(_GET.graph); 
+            }
+            else{
+                $('#graph').hide();
+            }
+            getModel(_GET.resource.replace(/ /g, '%20'), gvar.replace(/ /g, '%20'));
         }
         
         /**
@@ -833,7 +847,7 @@ function prefLabel_is_unique_child(json) {
  * @param {string} resource
  */
 
-function getModel(resource) {
+function getModel(resource, graph) {
     
     var folderpath = localStorage.getItem("filename"); // get filename if exists from localstorage  
     
@@ -872,6 +886,8 @@ function getModel(resource) {
         var htmltr = "";
 
         // if subject label has no value or no type return
+        // not sure why this is a problem
+        /*
         if ((jsondata.Subject.label == "")) {            
             if((jsondata.Subject.type == "")) {
                 $("#invalidSubject").modal();
@@ -880,8 +896,8 @@ function getModel(resource) {
             }                                  
             return;
         }
+        */  
         
-
         // creation of expand collapse buttons 
         $('.configuration').show();
         $('#navigator_view,#empty_border').show();

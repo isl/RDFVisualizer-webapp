@@ -8,7 +8,7 @@ package api.core.properties;
 public class Resources {
 
     //Property file resources 
-
+    public static boolean debug = false;
     public static final String propertyFilename = "properties.xml";
     //Property file resources
     public static final String inputFilePath = "inputFilePath";

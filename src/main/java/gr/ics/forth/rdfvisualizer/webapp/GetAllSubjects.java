@@ -6,6 +6,7 @@
 package gr.ics.forth.rdfvisualizer.webapp;
 
 import api.core.impl.RDFfileManager;
+import api.core.properties.Resources;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -42,6 +43,7 @@ public class GetAllSubjects extends HttpServlet {
 
         GetConfigProperties app = new GetConfigProperties();
         Properties props = app.getConfig("config.properties");
+        Resources.debug = props.containsKey("debug") && Boolean.parseBoolean(props.get("debug").toString());
         
         try (PrintWriter out = response.getWriter()) {
             String filepath = props.getProperty("filename").trim();
@@ -67,7 +69,7 @@ public class GetAllSubjects extends HttpServlet {
             //out.println(manager.returnAllSubjectsWithLabes(schema_Label_uri));
             out.println(manager.returnAllURIs(schema_Label_uri));
         } catch (Exception ex) {
-            if (props.containsKey("debug") && Boolean.parseBoolean(props.get("debug").toString())) {
+            if (Resources.debug) {
                 System.out.println(ex.getMessage());
                 Logger.getLogger(GetAllSubjects.class.getName()).log(Level.SEVERE, null, ex);
             }
